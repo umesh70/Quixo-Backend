@@ -23,3 +23,4 @@ def signup():
         return jsonify({'error': 'User already exists'}), 400
     
     redis_client.set(username,password)
+    return jsonify({'success': 'User signed up successfully'}), 201
