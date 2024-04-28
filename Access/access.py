@@ -1,11 +1,23 @@
 from flask import Flask, request, jsonify, session
 from flask_sqlalchemy import SQLAlchemy
+from flask_mail import Mail, Message
 import random
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '\xf0?a\x9a\\\xff\xd4;\x0c\xcbHi'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'  # SQLite database
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Flask-Mail configuration
+app.config['MAIL_SERVER'] = 'smtp.example.com'  # Change to your SMTP server
+app.config['MAIL_PORT'] = 587  # Change to your SMTP port
+app.config['MAIL_USE_TLS'] = True  # Enable TLS
+app.config['MAIL_USERNAME'] = 'your-email@example.com'  # Change to your email address
+app.config['MAIL_PASSWORD'] = 'your-email-password'  # Change to your email password
+app.config['MAIL_DEFAULT_SENDER'] = 'your-email@example.com'  # Change to your email address
+
+mail = Mail(app)
+
 db = SQLAlchemy(app)
 
 class User(db.Model):
@@ -38,10 +50,14 @@ def signup():
     # Store user details temporarily in session
     session['temp_user'] = {'username': username, 'password': password, 'email': email, 'otp': otp}
 
+    # Send email with OTP
+    msg = Message('Verification OTP', recipients=[email])
+    msg.body = f'Your OTP for verification is: {otp}'
+    mail.send(msg)
+
     return jsonify({'success': 'OTP generated successfully and sent to email', 'otp': otp}), 200
 
-
-@app.route('/verify',methods=['POST'])
+@app.route('/verify', methods=['POST'])
 def verify():
     data = request.json
     email = data.get('email')
