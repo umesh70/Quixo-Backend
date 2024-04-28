@@ -9,12 +9,12 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'  # SQLite database
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Flask-Mail configuration
-app.config['MAIL_SERVER'] = 'smtp.example.com'  # Change to your SMTP server
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'  # Change to your SMTP server
 app.config['MAIL_PORT'] = 587  # Change to your SMTP port
 app.config['MAIL_USE_TLS'] = True  # Enable TLS
-app.config['MAIL_USERNAME'] = 'your-email@example.com'  # Change to your email address
-app.config['MAIL_PASSWORD'] = 'your-email-password'  # Change to your email password
-app.config['MAIL_DEFAULT_SENDER'] = 'your-email@example.com'  # Change to your email address
+app.config['MAIL_USERNAME'] = 'work.umesh12@gmail.com'  # Change to your email address
+app.config['MAIL_PASSWORD'] = 'tuJUgiiy:Q6Phhy'  # Change to your email password
+app.config['MAIL_DEFAULT_SENDER'] = 'work.umesh12@gmail.com'  # Change to your email address
 
 mail = Mail(app)
 
