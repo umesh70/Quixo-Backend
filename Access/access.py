@@ -58,20 +58,24 @@ def signup():
     return jsonify({'success': 'OTP generated successfully and sent to email', 'otp': otp}), 200
 
 @app.route('/verify', methods=['POST'])
+@app.route('/verify', methods=['POST'])
 def verify():
     data = request.json
     email = data.get('email')
     otp = data.get('otp')
 
-    if not email and not otp:
+    if not email or not otp:
         return jsonify({'error': 'Email and OTP are required'}), 400
 
     temp_user = session.get('temp_user')
     if not temp_user:
         return jsonify({'error': 'User details not found'}), 404
 
-    if temp_user['email'] != email and temp_user['otp'] != otp:
+    if temp_user['email'] != email or temp_user['otp'] != otp:
         return jsonify({'error': 'Invalid email or OTP'}), 400
+
+    if User.query.filter_by(username=temp_user['username']).first():
+        return jsonify({'error': 'Username already exists'}), 400
 
     new_user = User(username=temp_user['username'], password=temp_user['password'], email=temp_user['email'])
     db.session.add(new_user)
@@ -80,6 +84,7 @@ def verify():
     session.pop('temp_user')
 
     return jsonify({'success': 'User registered successfully'}), 200
+
 
 if __name__ == '__main__':
     app.run(debug=True)
