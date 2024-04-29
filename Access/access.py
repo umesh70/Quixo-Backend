@@ -13,7 +13,7 @@ app.config['MAIL_SERVER'] = 'smtp.gmail.com'  # Change to your SMTP server
 app.config['MAIL_PORT'] = 587  # Change to your SMTP port
 app.config['MAIL_USE_TLS'] = True  # Enable TLS
 app.config['MAIL_USERNAME'] = 'work.umesh12@gmail.com'  # Change to your email address
-app.config['MAIL_PASSWORD'] = 'tuJUgiiy:Q6Phhy'  # Change to your email password
+app.config['MAIL_PASSWORD'] = 'dagxifrxryaeovyl'  # Change to your email password
 app.config['MAIL_DEFAULT_SENDER'] = 'work.umesh12@gmail.com'  # Change to your email address
 
 mail = Mail(app)
@@ -63,14 +63,14 @@ def verify():
     email = data.get('email')
     otp = data.get('otp')
 
-    if not email or not otp:
+    if not email and not otp:
         return jsonify({'error': 'Email and OTP are required'}), 400
 
     temp_user = session.get('temp_user')
     if not temp_user:
         return jsonify({'error': 'User details not found'}), 404
 
-    if temp_user['email'] != email or temp_user['otp'] != otp:
+    if temp_user['email'] != email and temp_user['otp'] != otp:
         return jsonify({'error': 'Invalid email or OTP'}), 400
 
     new_user = User(username=temp_user['username'], password=temp_user['password'], email=temp_user['email'])
