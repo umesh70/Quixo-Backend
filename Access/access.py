@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_mail import Mail, Message
+from flask_cors import CORS
 import random
 
 app = Flask(__name__)
@@ -17,6 +18,7 @@ app.config['MAIL_PASSWORD'] = 'dagxifrxryaeovyl'  # Change to your email passwor
 app.config['MAIL_DEFAULT_SENDER'] = 'work.umesh12@gmail.com'  # Change to your email address
 
 mail = Mail(app)
+CORS(app)
 
 db = SQLAlchemy(app)
 
