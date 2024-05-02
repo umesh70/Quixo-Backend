@@ -34,21 +34,6 @@ class User(db.Model):
 with app.app_context():
     db.create_all()
 
-
-# Login route
-@app.route('/login', methods=['POST'])
-def login():
-    data = request.json
-    username = data.get('username')
-    password = data.get('password')
-
-  if username not in users or users[username] != password:
-        return jsonify({'message': 'Invalid username or password'}), 401
-
-    return jsonify({'message': 'Login successful'}), 200
-
-
-
 # signup
 @app.route('/signup', methods=['POST'])
 def signup():
@@ -77,7 +62,6 @@ def signup():
     return jsonify({'success': 'OTP generated successfully and sent to email', 'otp': otp}), 200
 
 @app.route('/verify', methods=['POST'])
-@app.route('/verify', methods=['POST'])
 def verify():
     data = request.json
     email = data.get('email')
@@ -103,6 +87,22 @@ def verify():
     session.pop('temp_user')
 
     return jsonify({'success': 'User registered successfully'}), 200
+
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.json
+    username = data.get('username')
+    password = data.get('password')
+
+    if not username or not password:
+        return jsonify({'error': 'Username and password are required'}), 400
+
+    user = User.query.filter_by(username=username, password=password).first()
+
+    if user:
+        return jsonify({'success': 'Login successful'}), 200
+    else:
+        return jsonify({'error': 'Invalid username or password'}), 401
 
 
 if __name__ == '__main__':
