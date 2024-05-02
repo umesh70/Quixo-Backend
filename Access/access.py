@@ -3,6 +3,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_mail import Mail, Message
 from flask_cors import CORS
 import random
+import datetime
+from functools import wraps
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '\xf0?a\x9a\\\xff\xd4;\x0c\xcbHi'
@@ -31,6 +33,21 @@ class User(db.Model):
 # Create the database tables
 with app.app_context():
     db.create_all()
+
+
+# Login route
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.json
+    username = data.get('username')
+    password = data.get('password')
+
+  if username not in users or users[username] != password:
+        return jsonify({'message': 'Invalid username or password'}), 401
+
+    return jsonify({'message': 'Login successful'}), 200
+
+
 
 # signup
 @app.route('/signup', methods=['POST'])
