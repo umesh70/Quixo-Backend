@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_mail import Mail, Message
-from flask_cors import CORS
+from flask_cors import CORS , cross_origin
 import random
 import datetime
 from functools import wraps
@@ -9,6 +9,7 @@ from flask_session import Session
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '!nS72@wq$u%xY'
+CORS(app, origins=['http://localhost:3000'], supports_credentials=True)
 
 # SQLAlchemy configuration (if using)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'  # SQLite database
@@ -31,7 +32,7 @@ app.config['SESSION_COOKIE_HTTPONLY'] = False
 app.config['SESSION_TYPE'] = 'filesystem'
 
 mail = Mail(app)
-CORS(app, origins='http://localhost:3000', supports_credentials=True)
+
 
 db = SQLAlchemy(app)
 class User(db.Model):
@@ -50,6 +51,7 @@ with app.app_context():
 
 # signup
 @app.route('/signup', methods=['POST'])
+@cross_origin()
 def signup():
     data = request.json
     username = data.get('username')
