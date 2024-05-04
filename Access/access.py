@@ -5,13 +5,16 @@ from flask_cors import CORS
 import random
 import datetime
 from functools import wraps
+from flask_session import Session 
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = '\xf0?a\x9a\\\xff\xd4;\x0c\xcbHi'
+app.config['SECRET_KEY'] = '!nS72@wq$u%xY'
+
+# SQLAlchemy configuration (if using)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'  # SQLite database
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Flask-Mail configuration
+# Flask-Mail configuration 
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'  # Change to your SMTP server
 app.config['MAIL_PORT'] = 587  # Change to your SMTP port
 app.config['MAIL_USE_TLS'] = True  # Enable TLS
@@ -22,26 +25,30 @@ app.config['MAIL_PASSWORD'] = 'dagxifrxryaeovyl'
 # Change to your email address
 app.config['MAIL_DEFAULT_SENDER'] = 'work.umesh12@gmail.com'
 
+# Session configuration
+app.config['SESSION_COOKIE_SECURE'] = False
+app.config['SESSION_COOKIE_HTTPONLY'] = False 
+app.config['SESSION_TYPE'] = 'filesystem'
+
 mail = Mail(app)
-CORS(app)
+CORS(app, origins='http://localhost:3000', supports_credentials=True)
 
 db = SQLAlchemy(app)
-
-
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
     password = db.Column(db.String(20), nullable=False)
     email = db.Column(db.String(30), unique=True, nullable=False)
+    is_verified = db.Column(db.Boolean,default = False,nullable = False)
+    otp = db.Column(db.Integer)
 
+Session(app)
 
 # Create the database tables
 with app.app_context():
     db.create_all()
 
 # signup
-
-
 @app.route('/signup', methods=['POST'])
 def signup():
     data = request.json
@@ -52,58 +59,54 @@ def signup():
     if not username or not password or not email:
         return jsonify({'error': 'Username, password, and email are required'}), 400
 
+    # Check for existing usernames and emails (already in your original code)
     if User.query.filter_by(username=username).first() or User.query.filter_by(email=email).first():
         return jsonify({'error': 'User already exists'}), 400
 
-    # Generate OTP
+
+    # Generate a unique OTP (consider using TOTP or hashed OTPs as discussed in the verification API)
     otp = ''.join(random.choices('0123456789', k=6))
 
-    # Store user details temporarily in session
-    session['temp_user'] = {'username': username,
-                            'password': password, 'email': email, 'otp': otp}
+    new_user = User(username=data['username'],
+                     password=password,
+                     email=data['email'],
+                     is_verified=False, 
+                     otp=otp) 
+    db.session.add(new_user)
+    db.session.commit()
 
-    # Send email with OTP
+    # Send email with OTP (already in your original code)
     msg = Message('Verification OTP', recipients=[email])
     msg.body = f'Your OTP for verification is: {otp}'
     mail.send(msg)
 
-    return jsonify({'success': 'OTP generated successfully and sent to email'}), 200
-
+    return jsonify({'success': 'Account created successfully. Please verify your email to proceed.'}), 201
 
 @app.route('/signup_verification', methods=['POST'])
 def signup_verification():
     data = request.json
     email = data.get('email')
     otp = data.get('otp')
-    print("data recieved")
-
+    print(otp)
     if not email or not otp:
-        print("check1")
-        return jsonify({'error': 'Email and OTP are required'}), 400
-    
+        return jsonify({'error': 'Email and OTP are required'}), 401    
 
-    temp_user = session.get('temp_user')
-    if not temp_user:
-        print("check2")
-        return jsonify({'error': 'User details not found'}), 404
-    
+    # Fetch user by email securely using prepared statements
+    user = User.query.filter_by(email=email).first()
+    print(user.otp)
+    if not user:
+        return jsonify({'error': 'Invalid email'}), 402
 
-    if temp_user['email'] != email or temp_user['otp'] != otp:
-        print("check3")
-        return jsonify({'error': 'Invalid email or OTP'}), 400
+    if user.otp != otp:  
+        return jsonify({'error': 'Invalid OTP'}), 403
 
-    if User.query.filter_by(username=temp_user['username']).first():
-        print("check4")
-        return jsonify({'error': 'Username already exists'}), 400
+    # Clear OTP after successful verification (optional for security)
+    user.otp = None
 
-    new_user = User(username=temp_user['username'],
-                    password=temp_user['password'], email=temp_user['email'])
-    db.session.add(new_user)
+    user.verified = True
     db.session.commit()
 
-    session.pop('temp_user')
-
-    return jsonify({'success': 'User registered successfully'}), 200
+    return jsonify({'success': 'Email verified successfully'}), 200
 
 @app.route('/login', methods=['POST'])
 def login():
