@@ -8,8 +8,9 @@ from functools import wraps
 from flask_session import Session 
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = '!nS72@wq$u%xY'
 CORS(app, origins=['http://localhost:3000'], supports_credentials=True)
+app.config['SECRET_KEY'] = '!nS72@wq$u%xY'
+
 
 # SQLAlchemy configuration (if using)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'  # SQLite database
