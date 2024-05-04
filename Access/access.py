@@ -105,7 +105,6 @@ def signup_verification():
 
     return jsonify({'success': 'User registered successfully'}), 200
 
-
 @app.route('/login', methods=['POST'])
 def login():
     data = request.json
