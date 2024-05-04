@@ -75,18 +75,25 @@ def signup_verification():
     data = request.json
     email = data.get('email')
     otp = data.get('otp')
+    print("data recieved")
 
     if not email or not otp:
+        print("check1")
         return jsonify({'error': 'Email and OTP are required'}), 400
+    
 
     temp_user = session.get('temp_user')
     if not temp_user:
+        print("check2")
         return jsonify({'error': 'User details not found'}), 404
+    
 
     if temp_user['email'] != email or temp_user['otp'] != otp:
+        print("check3")
         return jsonify({'error': 'Invalid email or OTP'}), 400
 
     if User.query.filter_by(username=temp_user['username']).first():
+        print("check4")
         return jsonify({'error': 'Username already exists'}), 400
 
     new_user = User(username=temp_user['username'],
