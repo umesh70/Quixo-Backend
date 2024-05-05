@@ -1,11 +1,11 @@
 from flask import Flask, request, jsonify, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_mail import Mail, Message
-from flask_cors import CORS , cross_origin
+from flask_cors import CORS, cross_origin
 import random
 import datetime
 from functools import wraps
-from flask_session import Session 
+from flask_session import Session
 
 app = Flask(__name__)
 CORS(app, origins=['http://localhost:3000'], supports_credentials=True)
@@ -16,7 +16,7 @@ app.config['SECRET_KEY'] = '!nS72@wq$u%xY'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'  # SQLite database
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Flask-Mail configuration 
+# Flask-Mail configuration
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'  # Change to your SMTP server
 app.config['MAIL_PORT'] = 587  # Change to your SMTP port
 app.config['MAIL_USE_TLS'] = True  # Enable TLS
@@ -29,19 +29,22 @@ app.config['MAIL_DEFAULT_SENDER'] = 'work.umesh12@gmail.com'
 
 # Session configuration
 app.config['SESSION_COOKIE_SECURE'] = False
-app.config['SESSION_COOKIE_HTTPONLY'] = False 
+app.config['SESSION_COOKIE_HTTPONLY'] = False
 app.config['SESSION_TYPE'] = 'filesystem'
 
 mail = Mail(app)
 
 db = SQLAlchemy(app)
+
+
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
     password = db.Column(db.String(20), nullable=False)
     email = db.Column(db.String(30), unique=True, nullable=False)
-    is_verified = db.Column(db.Boolean,default = False,nullable = False)
+    is_verified = db.Column(db.Boolean, default=False, nullable=False)
     otp = db.Column(db.Integer)
+
 
 Session(app)
 
@@ -50,6 +53,8 @@ with app.app_context():
     db.create_all()
 
 # signup
+
+
 @app.route('/signup', methods=['POST'])
 @cross_origin()
 def signup():
@@ -65,15 +70,14 @@ def signup():
     if User.query.filter_by(username=username).first() or User.query.filter_by(email=email).first():
         return jsonify({'error': 'User already exists'}), 400
 
-
     # Generate a unique OTP (consider using TOTP or hashed OTPs as discussed in the verification API)
     otp = ''.join(random.choices('0123456789', k=6))
 
     new_user = User(username=data['username'],
-                     password=password,
-                     email=data['email'],
-                     is_verified=False, 
-                     otp=otp) 
+                    password=password,
+                    email=data['email'],
+                    is_verified=False,
+                    otp=otp)
     db.session.add(new_user)
     db.session.commit()
 
@@ -84,6 +88,7 @@ def signup():
 
     return jsonify({'success': 'Account created successfully. Please verify your email to proceed.'}), 201
 
+
 @app.route('/signup_verification', methods=['POST'])
 def signup_verification():
     data = request.json
@@ -91,7 +96,7 @@ def signup_verification():
     otp = data.get('otp')
     print(otp)
     if not email or not otp:
-        return jsonify({'error': 'Email and OTP are required'}), 401    
+        return jsonify({'error': 'OTP is required'}), 401
 
     # Fetch user by email securely using prepared statements
     user = User.query.filter_by(email=email).first()
@@ -99,7 +104,7 @@ def signup_verification():
     if not user:
         return jsonify({'error': 'Invalid email'}), 402
 
-    if user.otp != otp:  
+    if user.otp != otp:
         return jsonify({'error': 'Invalid OTP'}), 403
 
     # Clear OTP after successful verification (optional for security)
@@ -110,21 +115,22 @@ def signup_verification():
 
     return jsonify({'success': 'Email verified successfully'}), 200
 
+
 @app.route('/login', methods=['POST'])
 def login():
     data = request.json
-    email  = data.get('email')
+    username = data.get('username')
     password = data.get('password')
 
-    if not email or not password:
+    if not username or not password:
         return jsonify({'error': 'Username and password are required'}), 400
 
-    user = User.query.filter_by(username=email, password=password).first()
+    user = User.query.filter_by(username=username, password=password).first()
 
     if user:
         return jsonify({'success': 'Login successful'}), 200
     else:
-        return jsonify({'error': 'Invalid username or password'}), 401
+        return jsonify({'error': 'Invalid email or password'}), 401
 
 
 @app.route('/pw_forget', methods=['POST'])
