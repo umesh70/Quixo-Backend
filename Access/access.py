@@ -34,7 +34,6 @@ app.config['SESSION_TYPE'] = 'filesystem'
 
 mail = Mail(app)
 
-
 db = SQLAlchemy(app)
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -114,18 +113,66 @@ def signup_verification():
 @app.route('/login', methods=['POST'])
 def login():
     data = request.json
-    username = data.get('username')
+    email  = data.get('email')
     password = data.get('password')
 
-    if not username or not password:
+    if not email or not password:
         return jsonify({'error': 'Username and password are required'}), 400
 
-    user = User.query.filter_by(username=username, password=password).first()
+    user = User.query.filter_by(username=email, password=password).first()
 
     if user:
         return jsonify({'success': 'Login successful'}), 200
     else:
         return jsonify({'error': 'Invalid username or password'}), 401
+
+
+@app.route('/pw_forget', methods=['POST'])
+@cross_origin()
+def pw_forget():
+    email = request.json.get('email')
+    if not email:
+        return jsonify({'error': 'Email is required'}), 400
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    # Generate a unique OTP for password reset
+    otp = ''.join(random.choices('0123456789', k=6))
+    user.otp = otp
+    db.session.commit()
+
+    # Send email with OTP for password reset
+    msg = Message('Password Reset OTP', recipients=[email])
+    msg.body = f'Your OTP for password reset is: {otp}'
+    mail.send(msg)
+
+    return jsonify({'success': 'Password reset OTP sent successfully'}), 200
+
+@app.route('/pw_reset', methods=['POST'])
+@cross_origin()
+def pw_reset():
+    email = request.json.get('email')
+    otp = request.json.get('otp')
+    new_password = request.json.get('new_password')
+
+    if not email or not otp or not new_password:
+        return jsonify({'error': 'Email, OTP, and new password are required'}), 400
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    if user.otp != otp:
+        return jsonify({'error': 'Invalid OTP'}), 401
+
+    # Reset password
+    user.password = new_password
+    user.otp = None
+    db.session.commit()
+
+    return jsonify({'success': 'Password reset successful'}), 200
 
 
 if __name__ == '__main__':
