@@ -119,13 +119,13 @@ def signup_verification():
 @app.route('/login', methods=['POST'])
 def login():
     data = request.json
-    username = data.get('username')
+    email = data.get('email')
     password = data.get('password')
 
-    if not username or not password:
-        return jsonify({'error': 'Username and password are required'}), 400
+    if not email or not password:
+        return jsonify({'error': 'Email and password are required'}), 400
 
-    user = User.query.filter_by(username=username, password=password).first()
+    user = User.query.filter_by(email=email, password=password).first()
 
     if user:
         return jsonify({'success': 'Login successful'}), 200
@@ -156,19 +156,22 @@ def pw_forget():
 
     return jsonify({'success': 'Password reset OTP sent successfully'}), 200
 
+
 @app.route('/pw_reset', methods=['POST'])
 @cross_origin()
 def pw_reset():
     email = request.json.get('email')
     otp = request.json.get('otp')
     new_password = request.json.get('new_password')
+    print(otp)
 
     if not email or not otp or not new_password:
-        return jsonify({'error': 'Email, OTP, and new password are required'}), 400
+        return jsonify({'error': 'OTP, and new password are required'}), 400
 
     user = User.query.filter_by(email=email).first()
     if not user:
         return jsonify({'error': 'User not found'}), 404
+    print(user.otp)
 
     if user.otp != otp:
         return jsonify({'error': 'Invalid OTP'}), 401
