@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_mail import Mail, Message
 from flask_cors import CORS, cross_origin
 import random
-import datetime
+from datetime import datetime
 from functools import wraps
 from flask_session import Session
 from flask_jwt_extended import JWTManager
@@ -52,19 +52,23 @@ class User(db.Model):
 
 Session(app)
 
+
 def generate_token(user_id):
     payload = {
-        'exp': datetime.utcnow() + timedelta(days=1),  # Expires in one day
-        'iat': datetime.utcnow(),
+        'exp': datetime.now() + timedelta(days=1),  # Expires in one day
+        'iat': datetime.now(),
         'sub': user_id
     }
     return jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256')
+
 
 # Create the database tables
 with app.app_context():
     db.create_all()
 
 # signup
+
+
 @app.route('/signup', methods=['POST'])
 @cross_origin()
 def signup():
@@ -76,11 +80,11 @@ def signup():
     if not username or not password or not email:
         return jsonify({'error': 'Username, password, and email are required'}), 400
 
-    # Check for existing usernames and emails 
+    # Check for existing usernames and emails
     if User.query.filter_by(username=username).first() or User.query.filter_by(email=email).first():
         return jsonify({'error': 'User already exists'}), 400
 
-    # Generate a unique OTP 
+    # Generate a unique OTP
     otp = ''.join(random.choices('0123456789', k=6))
 
     new_user = User(username=data['username'],
@@ -91,13 +95,13 @@ def signup():
     db.session.add(new_user)
     db.session.commit()
 
-    # Send email with OTP 
+    # Send email with OTP
     msg = Message('Verification OTP', recipients=[email])
     msg.body = f'Your OTP for verification is: {otp}'
     mail.send(msg)
 
     token = generate_token(User.id)
-    return jsonify({'success': 'Account created successfully. Please verify your email to proceed.'}),token, 201
+    return jsonify({'success': 'Account created successfully. Please verify your email to proceed.'}), token, 201
 
 
 @app.route('/signup_verification', methods=['POST'])
@@ -117,11 +121,11 @@ def signup_verification():
 
     if user.otp != otp:
         return jsonify({'error': 'Invalid OTP'}), 403
-    
+
     access_token = generate_token(User.id)
     print(access_token)
 
-    # Clear OTP after successful verification 
+    # Clear OTP after successful verification
     user.otp = None
 
     user.verified = True
@@ -142,7 +146,7 @@ def login():
     user = User.query.filter_by(email=email, password=password).first()
     token = generate_token(User.id)
     if user:
-        return jsonify({'success': 'Login successful'}),token, 200
+        return jsonify({'success': 'Login successful'}), token, 200
     else:
         return jsonify({'error': 'Invalid email or password'}), 401
 
@@ -202,10 +206,11 @@ def pw_reset():
 def protected():
     token = request.headers.get('Authorization')
     if token.startswith('Bearer '):
-        token = token[7:]  
+        token = token[7:]
 
     try:
-        data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+        data = jwt.decode(
+            token, app.config['SECRET_KEY'], algorithms=['HS256'])
         return jsonify({'user_id': data['sub']})
     except jwt.ExpiredSignatureError:
         return jsonify({'message': 'Token expired'}), 401
