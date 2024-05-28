@@ -6,10 +6,11 @@ import random
 from datetime import datetime
 from functools import wraps
 from flask_session import Session
-from flask_jwt_extended import JWTManager
+from flask_jwt_extended import JWTManager,create_access_token
 from datetime import timedelta
 
 app = Flask(__name__)
+
 CORS(app, origins=['http://localhost:3000'], supports_credentials=True)
 jwt = JWTManager(app)
 app.config['SECRET_KEY'] = '!nS72@wq$u%xY'
@@ -48,23 +49,21 @@ class User(db.Model):
     email = db.Column(db.String(30), unique=True, nullable=False)
     is_verified = db.Column(db.Boolean, default=False, nullable=False)
     otp = db.Column(db.Integer)
-
-
-Session(app)
-
-
-def generate_token(user_id):
-    payload = {
-        'exp': datetime.now() + timedelta(days=1),  # Expires in one day
-        'iat': datetime.now(),
-        'sub': user_id
-    }
-    return jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256')
-
-
 # Create the database tables
 with app.app_context():
     db.create_all()
+Session(app)
+
+
+
+def generate_token(user_id):
+    with app.app_context():
+        expires = timedelta(days=1)
+        additional_claims = {'sub': user_id}
+        token = create_access_token(identity=user_id, expires_delta=expires, additional_claims=additional_claims)
+    return token
+
+
 
 # signup
 
