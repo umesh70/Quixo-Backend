@@ -118,7 +118,7 @@ def signup_verification():
     if user.otp != otp:
         return jsonify({'error': 'Invalid OTP'}), 403
     
-    access_token = create_access_token(identity=user.id)
+    access_token = generate_token(User.id)
     print(access_token)
 
     # Clear OTP after successful verification 
