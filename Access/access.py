@@ -119,7 +119,7 @@ def signup_verification():
     if user.otp != otp:
         return jsonify({'error': 'Invalid OTP'}), 403
 
-    access_token = generate_token(User.id)
+    access_token = generate_token(user.id)
     print(access_token)
 
     # Clear OTP after successful verification
@@ -141,9 +141,9 @@ def login():
         return jsonify({'error': 'Email and password are required'}), 400
 
     user = User.query.filter_by(email=email, password=password).first()
-    token = generate_token(User.id)
+    token = generate_token(user.id)
     if user:
-        return jsonify({'success': 'Login successful'}), token, 200
+        return jsonify({'success': 'Login successful','token':token}) ,200
     else:
         return jsonify({'error': 'Invalid email or password'}), 401
 
