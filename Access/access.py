@@ -49,25 +49,23 @@ class User(db.Model):
     email = db.Column(db.String(30), unique=True, nullable=False)
     is_verified = db.Column(db.Boolean, default=False, nullable=False)
     otp = db.Column(db.Integer)
+
 # Create the database tables
 with app.app_context():
     db.create_all()
+
 Session(app)
-
-
 
 def generate_token(user_id):
     with app.app_context():
         expires = timedelta(days=1)
         additional_claims = {'sub': user_id}
         token = create_access_token(identity=user_id, expires_delta=expires, additional_claims=additional_claims)
-    return token
+        return token
 
 
 
 # signup
-
-
 @app.route('/signup', methods=['POST'])
 @cross_origin()
 def signup():
@@ -99,8 +97,8 @@ def signup():
     msg.body = f'Your OTP for verification is: {otp}'
     mail.send(msg)
 
-    token = generate_token(User.id)
-    return jsonify({'success': 'Account created successfully. Please verify your email to proceed.'}), token, 201
+    token = generate_token(new_user.id)
+    return jsonify({'success': 'Account created successfully. Please verify your email to proceed.','token':token}), 201
 
 
 @app.route('/signup_verification', methods=['POST'])
