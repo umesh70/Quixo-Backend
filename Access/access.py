@@ -219,4 +219,5 @@ def protected():
 
 
 if __name__ == '__main__':
+    generate_token(1)
     app.run(debug=True)
