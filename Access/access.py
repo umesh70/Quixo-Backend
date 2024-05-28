@@ -6,7 +6,7 @@ import random
 from datetime import datetime
 from functools import wraps
 from flask_session import Session
-from flask_jwt_extended import JWTManager,create_access_token
+from flask_jwt_extended import JWTManager, create_access_token
 from datetime import timedelta
 
 app = Flask(__name__)
@@ -50,19 +50,21 @@ class User(db.Model):
     is_verified = db.Column(db.Boolean, default=False, nullable=False)
     otp = db.Column(db.Integer)
 
+
 # Create the database tables
 with app.app_context():
     db.create_all()
 
 Session(app)
 
+
 def generate_token(user_id):
     with app.app_context():
         expires = timedelta(days=1)
         additional_claims = {'sub': user_id}
-        token = create_access_token(identity=user_id, expires_delta=expires, additional_claims=additional_claims)
+        token = create_access_token(
+            identity=user_id, expires_delta=expires, additional_claims=additional_claims)
         return token
-
 
 
 # signup
@@ -78,8 +80,11 @@ def signup():
         return jsonify({'error': 'Username, password, and email are required'}), 400
 
     # Check for existing usernames and emails
-    if User.query.filter_by(username=username).first() or User.query.filter_by(email=email).first():
+    if User.query.filter_by(email=email).first():
         return jsonify({'error': 'User already exists'}), 400
+
+    if User.query.filter_by(username=username).first():
+        return jsonify({'error': 'Username already exists'}), 400
 
     # Generate a unique OTP
     otp = ''.join(random.choices('0123456789', k=6))
@@ -98,7 +103,7 @@ def signup():
     mail.send(msg)
 
     token = generate_token(new_user.id)
-    return jsonify({'success': 'Account created successfully. Please verify your email to proceed.','token':token}), 201
+    return jsonify({'success': 'Account created successfully. Please verify your email to proceed.', 'token': token}), 201
 
 
 @app.route('/signup_verification', methods=['POST'])
@@ -143,7 +148,7 @@ def login():
     user = User.query.filter_by(email=email, password=password).first()
     token = generate_token(user.id)
     if user:
-        return jsonify({'success': 'Login successful','token':token}) ,200
+        return jsonify({'success': 'Login successful', 'token': token}), 200
     else:
         return jsonify({'error': 'Invalid email or password'}), 401
 
