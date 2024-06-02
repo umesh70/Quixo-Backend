@@ -11,6 +11,16 @@ class User(db.Model):
     is_verified = db.Column(db.Boolean, default=False, nullable=False)
     otp = db.Column(db.Integer)
 
+class Workspaces(db.Model):
+    workspace_id = db.Column(db.Integer, primary_key=True)
+    workspace_name = db.Column(db.String(20), nullable=False)
+    description = db.Column(db.String(200), nullable=True)
+    owner_id  =  db.Column(db.Integer, db.ForeignKey(User.id))
+    owner = db.relationship('User', backref=db.backref('workspaces', lazy=True))
+
+    def __repr__(self):
+        return f'<Workspace {self.workspace_name}>'
+
 
 def init_db(app):
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
