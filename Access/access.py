@@ -236,7 +236,8 @@ def generate_token(user_id):
     with app.app_context():
         expires = timedelta(days=1)
         additional_claims = {'sub': user_id}
-        token = create_access_token(identity=user_id, expires_delta=expires, additional_claims=additional_claims)
+        token = create_access_token(
+            identity=user_id, expires_delta=expires, additional_claims=additional_claims)
         return token
 
 @app.route('/signup', methods=['POST'])
