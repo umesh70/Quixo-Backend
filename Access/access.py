@@ -12,7 +12,6 @@ import random
 
 app, jwt, mail = create_app()
 
-
 def generate_token(user_id):
     with app.app_context():
         expires = timedelta(days=1)

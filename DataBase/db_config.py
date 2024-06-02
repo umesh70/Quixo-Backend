@@ -15,9 +15,8 @@ class Workspaces(db.Model):
     workspace_id = db.Column(db.Integer, primary_key=True)
     workspace_name = db.Column(db.String(20), nullable=False)
     description = db.Column(db.String(200), nullable=True)
-    owner_id  =  db.Column(db.Integer, db.ForeignKey(User.id))
-    owner = db.relationship('User', backref=db.backref('workspaces', lazy=True))
-
+    admin_id  =  db.Column(db.Integer, db.ForeignKey(User.id))
+    admin_mail = db.Column(db.String(50), nullable=False)
     def __repr__(self):
         return f'<Workspace {self.workspace_name}>'
 
