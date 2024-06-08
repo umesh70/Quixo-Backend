@@ -2,25 +2,18 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from ConfigFiles.app_config import create_app
 from DataBase.db_config import db, User
 from flask import request, jsonify,Blueprint
 from flask_jwt_extended import create_access_token, jwt_required
 from datetime import timedelta
 from flask_mail import Message
 import random
+from  Utilities.utilities import mail , jwt, generate_token
 
-app, jwt, mail = create_app()
 
-def generate_token(user_id):
-    with app.app_context():
-        expires = timedelta(days=1)
-        additional_claims = {'sub': user_id}
-        token = create_access_token(
-            identity=user_id, expires_delta=expires, additional_claims=additional_claims)
-        return token
+auth_app = Blueprint('auth',__name__)
 
-@app.route('/signup', methods=['POST'])
+@auth_app.route('/signup', methods=['POST'])
 def signup():
     data = request.json
     username = data.get('username')
@@ -46,7 +39,9 @@ def signup():
     token = generate_token(new_user.id)
     return jsonify({'success': 'Account created successfully. Please verify your email to proceed.', 'token': token}), 201
 
-@app.route('/signup_verification', methods=['POST'])
+
+
+@auth_app.route('/signup_verification', methods=['POST'])
 def signup_verification():
     data = request.json
     email = data.get('email')
@@ -62,7 +57,8 @@ def signup_verification():
 
     return jsonify({'success': 'Email verified successfully'}), 200
 
-@app.route('/login', methods=['POST'])
+
+@auth_app.route('/login', methods=['POST'])
 def login():
     data = request.json
     email = data.get('email')
@@ -75,7 +71,7 @@ def login():
     token = generate_token(user.id)
     return jsonify({'success': 'Login successful', 'token': token,'username':user.username}), 200
 
-@app.route('/pw_forget', methods=['POST'])
+@auth_app.route('/pw_forget', methods=['POST'])
 def pw_forget():
     email = request.json.get('email')
     user = User.query.filter_by(email=email).first()
@@ -92,7 +88,9 @@ def pw_forget():
 
     return jsonify({'success': 'Password reset OTP sent successfully'}), 200
 
-@app.route('/pw_reset', methods=['POST'])
+
+
+@auth_app.route('/pw_reset', methods=['POST'])
 def pw_reset():
     data = request.json
     email = data.get('email')
@@ -109,7 +107,7 @@ def pw_reset():
 
     return jsonify({'success': 'Password reset successful'}), 200
 
-@app.route('/protected', methods=['GET'])
+@auth_app.route('/protected', methods=['GET'])
 def protected():
     token = request.headers.get('Authorization')
     if token.startswith('Bearer '):
@@ -117,12 +115,9 @@ def protected():
 
     try:
         data = jwt.decode(
-            token, app.config['SECRET_KEY'], algorithms=['HS256'])
+            token, auth_app.config['SECRET_KEY'], algorithms=['HS256'])
         return jsonify({'user_id': data['sub']})
     except jwt.ExpiredSignatureError:
         return jsonify({'message': 'Token expired'}), 401
     except jwt.InvalidTokenError:
         return jsonify({'message': 'Invalid token'}), 401
-
-if __name__ == '__main__':
-    app.run(debug=True)
