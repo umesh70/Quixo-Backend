@@ -7,7 +7,7 @@ from flask_session import Session
 from DataBase.db_config import init_db
 from Utilities.utilities import init_jwt,init_mail
 from Access.access import auth_app
-
+from Workspace.workspaces import Workspace_app
 app = Flask(__name__)
 CORS(app, origins=['http://localhost:3000'], supports_credentials=True)
 app.config['SECRET_KEY'] = '!nS72@wq$u%xY'
@@ -23,6 +23,7 @@ app.config['MAIL_PASSWORD'] = 'dagxifrxryaeovyl'
 app.config['MAIL_DEFAULT_SENDER'] = 'work.umesh12@gmail.com'
 
 app.register_blueprint(blueprint=auth_app, url_prefix='/auth')
+app.register_blueprint(blueprint=Workspace_app, url_prefix = '/workspace')
 init_jwt(app)
 init_mail(app)
 Session(app)

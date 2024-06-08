@@ -4,8 +4,6 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from DataBase.db_config import db, User
 from flask import request, jsonify,Blueprint
-from flask_jwt_extended import create_access_token, jwt_required
-from datetime import timedelta
 from flask_mail import Message
 import random
 from  Utilities.utilities import mail , jwt, generate_token
