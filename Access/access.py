@@ -73,7 +73,7 @@ def login():
         return jsonify({'error': 'Invalid credentials'}), 401
 
     token = generate_token(user.id)
-    return jsonify({'success': 'Login successful', 'token': token}), 200
+    return jsonify({'success': 'Login successful', 'token': token,'username':user.username}), 200
 
 @app.route('/pw_forget', methods=['POST'])
 def pw_forget():
