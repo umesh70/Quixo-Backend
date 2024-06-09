@@ -34,7 +34,7 @@ def create_workspace():
 @jwt_required()
 def get_workspaces():
     # Query the database for all the workspaces
-    workspaces = Workspaces.query.all()
+    workspaces = Workspaces.query.order_by(Workspaces.admin_id.asc()).all()
     workspace_list = []
     for workspace in workspaces:
         workspace_data = {
@@ -44,6 +44,12 @@ def get_workspaces():
             'admin_id': workspace.admin_id,
             'description': workspace.description
         }
+# @Workspace_app.route('/del_workspace',methods = ['GET','POST'])
+# @jwt_required()
+# def del_workspace():
+#     data = request.json
+#     workspace_id = data['id']
+
         workspace_list.append(workspace_data)
 
     return jsonify(workspace_list), 200
