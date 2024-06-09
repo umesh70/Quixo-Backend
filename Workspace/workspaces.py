@@ -2,13 +2,11 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-
 from DataBase.db_config import db, User,Workspaces
 from flask import request, jsonify
 from flask_jwt_extended import jwt_required
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask import request, jsonify,Blueprint
-
 
 Workspace_app = Blueprint('workspace_points',__name__)
 
@@ -31,3 +29,20 @@ def create_workspace():
     db.session.add(new_workspace)
     db.session.commit()
     return jsonify({'message': f'Workspace {workspace_name} created successfully'}), 201
+
+@Workspace_app.route('/get_workspaces',methods = ['GET','POST'])
+def get_workspaces():
+    # Query the database for all the workspaces
+    workspaces = Workspaces.query.all()
+    workspace_list = []
+    for workspace in workspaces:
+        workspace_data = {
+            'id': workspace.id,
+            'workspace_name': workspace.workspace_name,
+            'admin_mail': workspace.admin_mail,
+            'admin_id': workspace.admin_id,
+            'description': workspace.description
+        }
+        workspace_list.append(workspace_data)
+
+    return jsonify(workspace_list), 200
