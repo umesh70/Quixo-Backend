@@ -31,13 +31,14 @@ def create_workspace():
     return jsonify({'message': f'Workspace {workspace_name} created successfully'}), 201
 
 @Workspace_app.route('/get_workspaces',methods = ['GET','POST'])
+@jwt_required()
 def get_workspaces():
     # Query the database for all the workspaces
     workspaces = Workspaces.query.all()
     workspace_list = []
     for workspace in workspaces:
         workspace_data = {
-            'id': workspace.id,
+            'id': workspace.workspace_id,
             'workspace_name': workspace.workspace_name,
             'admin_mail': workspace.admin_mail,
             'admin_id': workspace.admin_id,
