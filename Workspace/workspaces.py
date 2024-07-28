@@ -1,12 +1,12 @@
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from flask import request, jsonify, Blueprint
 from DataBase.db_config import db, User, Workspaces
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask_jwt_extended import jwt_required
 from flask import request, jsonify
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 
 Workspace_app = Blueprint('workspace_points', __name__)
 
@@ -58,11 +58,9 @@ def get_workspaces():
     return jsonify(workspace_list), 200
 
 
-@Workspace_app.route('/delete_workspace', methods=['DELETE'])
+@Workspace_app.route('/delete_workspace/<id>', methods=['DELETE'])
 @jwt_required()
-def delete_workspace():
-    data = request.json
-    id = data["workspace_id"]
+def delete_workspace(id):
 
     workspace = Workspaces.query.filter_by(workspace_id=id).first()
 
