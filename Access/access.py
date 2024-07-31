@@ -3,8 +3,8 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from DataBase.db_config import db, User
-from flask import request, jsonify,Blueprint,session
-from datetime import datetime, timedelta
+from flask import request, jsonify,Blueprint
+from flask_session import Session
 from flask_mail import Message
 import random
 from  Utilities.utilities import mail , jwt, generate_token
@@ -26,12 +26,11 @@ def signup():
         return jsonify({'error': 'Username or email already exists'}), 409
 
     otp = random.randint(111111, 999999)
-    session['user_data'] = {
-        'username': data['username'],
-        'email': data['email'],
-        'password': data['password'],  # Remember to hash this in production
-        'otp': otp,  # Replace with actual OTP generation
-        'otp_expiry': datetime.now() + timedelta(minutes=5)
+    Session['user_data'] = {
+        'username': username,
+        'password': password,
+        'email': email,
+        'otp': otp
     }
     # new_user = User(username=username, password=password, email=email, is_verified=False, otp=otp)
     # db.session.add(new_user)
@@ -42,7 +41,7 @@ def signup():
     mail.send(msg)
 
     # token = generate_token(see)
-    return jsonify({'success': 'Please verify your email to create account.'}), 201
+    return jsonify({'success': 'Account created successfully. Please verify your email to proceed.'}), 201
 
 
 
@@ -51,20 +50,14 @@ def signup_verification():
     data = request.json
     otp = int(data.get('otp'))
 
-    if 'user_data' not in session:
+    if 'user_data' not in Session:
         return jsonify({'error': 'No signup session found. Please signup first.'}), 400
 
-    user_data = session['user_data']
+    user_data = Session['user_data']
     stored_otp = user_data.get('otp')
-    otp_expiry = user_data.get('otp_expiry')
-
-
-    if not otp or not stored_otp or datetime.now() > otp_expiry:
-        session.pop('user_data', None)
-        return jsonify({'status': 'error', 'message': 'Invalid or expired OTP'}), 400
 
     if otp != stored_otp:
-        return jsonify({'status': 'error', 'message': 'Invalid OTP'}), 400
+        return jsonify({'error': 'Invalid OTP'}), 400
 
     new_user = User(
         username=user_data['username'],
@@ -76,7 +69,7 @@ def signup_verification():
     db.session.add(new_user)
     db.session.commit()
 
-    session.pop('user_data', None)
+    Session.pop('user_data', None)
 
     token = generate_token(new_user.id)
     return jsonify({'success': 'Account created and verified successfully.', 'token': token}), 201
@@ -103,7 +96,7 @@ def pw_forget():
     email = request.json.get('email')
     user = User.query.filter_by(email=email).first()
     if not user:
-        return jsonify({'error': 'User does not exist, please sign up first'}), 404
+        return jsonify({'error': 'User not found'}), 404
 
     otp = random.randint(100000, 999999)
     user.otp = otp
@@ -126,7 +119,7 @@ def pw_reset():
 
     user = User.query.filter_by(email=email).first()
     if not user or user.otp != otp:
-        return jsonify({'error': 'Invalid OTP'}), 400
+        return jsonify({'error': 'Invalid email or OTP'}), 400
 
     user.password = new_password
     user.otp = None  # Clear the OTP after use
