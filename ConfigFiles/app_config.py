@@ -3,7 +3,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from flask import Flask
 from flask_cors import CORS
-from flask_session import Session
+from flask_session import session
 from datetime import datetime, timedelta
 from DataBase.db_config import init_db
 from Utilities.utilities import init_jwt,init_mail
@@ -30,7 +30,7 @@ app.register_blueprint(blueprint=auth_app, url_prefix='/auth')
 app.register_blueprint(blueprint=Workspace_app, url_prefix = '/workspace')
 init_jwt(app)
 init_mail(app)
-Session(app)
+session(app)
 init_db(app)
 
 if __name__ == '__main__':
