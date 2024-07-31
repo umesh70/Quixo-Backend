@@ -3,8 +3,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from DataBase.db_config import db, User
-from flask import request, jsonify,Blueprint
-from flask_session import Session
+from flask import request, jsonify,Blueprint,session
 from flask_mail import Message
 import random
 from  Utilities.utilities import mail , jwt, generate_token
@@ -26,7 +25,7 @@ def signup():
         return jsonify({'error': 'Username or email already exists'}), 409
 
     otp = random.randint(111111, 999999)
-    Session['user_data'] = {
+    session['user_data'] = {
         'username': username,
         'password': password,
         'email': email,
@@ -49,12 +48,13 @@ def signup():
 def signup_verification():
     data = request.json
     otp = int(data.get('otp'))
-
-    if 'user_data' not in Session:
+    print(session.get('user_data'))
+    if 'user_data' not in session:
         return jsonify({'error': 'No signup session found. Please signup first.'}), 400
 
-    user_data = Session['user_data']
+    user_data = session.get('user_data')
     stored_otp = user_data.get('otp')
+    
 
     if otp != stored_otp:
         return jsonify({'error': 'Invalid OTP'}), 400
@@ -69,7 +69,7 @@ def signup_verification():
     db.session.add(new_user)
     db.session.commit()
 
-    Session.pop('user_data', None)
+    session.pop('user_data', None)
 
     token = generate_token(new_user.id)
     return jsonify({'success': 'Account created and verified successfully.', 'token': token}), 201
