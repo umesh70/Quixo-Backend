@@ -1,9 +1,9 @@
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from flask import Flask
+from flask import Flask,session
 from flask_cors import CORS
-from flask_session import session
+# from flask_session import session
 from datetime import datetime, timedelta
 from DataBase.db_config import init_db
 from Utilities.utilities import init_jwt,init_mail
