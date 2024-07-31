@@ -38,7 +38,7 @@ def signup():
     msg = Message('Verification OTP', recipients=[email])
     msg.body = f'Your OTP for verification is: {otp}'
     mail.send(msg)
-
+    print(session)
     # token = generate_token(see)
     return jsonify({'success': 'Account created successfully. Please verify your email to proceed.'}), 201
 
