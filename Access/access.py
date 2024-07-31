@@ -40,7 +40,7 @@ def signup():
     mail.send(msg)
 
     # token = generate_token(see)
-    return jsonify({'success': 'Account created successfully. Please verify your email to proceed.'}), 201
+    return jsonify({'success': 'Please verify your email to create account.'}), 201
 
 
 
@@ -95,7 +95,7 @@ def pw_forget():
     email = request.json.get('email')
     user = User.query.filter_by(email=email).first()
     if not user:
-        return jsonify({'error': 'User not found'}), 404
+        return jsonify({'error': 'User does not exist, please sign up first'}), 404
 
     otp = random.randint(100000, 999999)
     user.otp = otp
@@ -118,7 +118,7 @@ def pw_reset():
 
     user = User.query.filter_by(email=email).first()
     if not user or user.otp != otp:
-        return jsonify({'error': 'Invalid email or OTP'}), 400
+        return jsonify({'error': 'Invalid OTP'}), 400
 
     user.password = new_password
     user.otp = None  # Clear the OTP after use
