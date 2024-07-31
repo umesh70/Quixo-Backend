@@ -4,6 +4,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from DataBase.db_config import db, User
 from flask import request, jsonify,Blueprint,session
+from datetime import datetime, timedelta
 from flask_mail import Message
 import random
 from  Utilities.utilities import mail , jwt, generate_token
@@ -26,10 +27,11 @@ def signup():
 
     otp = random.randint(111111, 999999)
     session['user_data'] = {
-        'username': username,
-        'password': password,
-        'email': email,
-        'otp': otp
+        'username': data['username'],
+        'email': data['email'],
+        'password': data['password'],  # Remember to hash this in production
+        'otp': otp,  # Replace with actual OTP generation
+        'otp_expiry': datetime.now() + timedelta(minutes=5)
     }
     # new_user = User(username=username, password=password, email=email, is_verified=False, otp=otp)
     # db.session.add(new_user)
@@ -54,9 +56,15 @@ def signup_verification():
 
     user_data = session['user_data']
     stored_otp = user_data.get('otp')
+    otp_expiry = user_data.get('otp_expiry')
+
+
+    if not otp or not stored_otp or datetime.now() > otp_expiry:
+        session.pop('user_data', None)
+        return jsonify({'status': 'error', 'message': 'Invalid or expired OTP'}), 400
 
     if otp != stored_otp:
-        return jsonify({'error': 'Invalid OTP'}), 400
+        return jsonify({'status': 'error', 'message': 'Invalid OTP'}), 400
 
     new_user = User(
         username=user_data['username'],
