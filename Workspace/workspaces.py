@@ -47,12 +47,6 @@ def get_workspaces():
             'admin_id': workspace.admin_id,
             'description': workspace.description
         }
-# @Workspace_app.route('/del_workspace',methods = ['GET','POST'])
-# @jwt_required()
-# def del_workspace():
-#     data = request.json
-#     workspace_id = data['id']
-
         workspace_list.append(workspace_data)
 
     return jsonify(workspace_list), 200
