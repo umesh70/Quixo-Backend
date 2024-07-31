@@ -30,7 +30,7 @@ def signup():
         'username': data['username'],
         'email': data['email'],
         'password': data['password'],  # Remember to hash this in production
-        'otp': '123456',  # Replace with actual OTP generation
+        'otp': otp,  # Replace with actual OTP generation
         'otp_expiry': datetime.now() + timedelta(minutes=5)
     }
     # new_user = User(username=username, password=password, email=email, is_verified=False, otp=otp)
