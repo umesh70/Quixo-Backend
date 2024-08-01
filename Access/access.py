@@ -68,7 +68,7 @@ def signup_verification():
     session.pop('user_data', None)
 
     token = generate_token(new_user.id)
-    return jsonify({'success': 'Account created and verified successfully.', 'token': token}), 201
+    return jsonify({'success': 'Account created and verified successfully.', 'token': token, 'username': new_user.username, 'email': new_user.email}), 201
     
 @auth_app.route('/login', methods=['POST'])
 def login():
@@ -92,7 +92,7 @@ def pw_forget():
     email = request.json.get('email')
     user = User.query.filter_by(email=email).first()
     if not user:
-        return jsonify({'error': 'User not found'}), 404
+        return jsonify({'error': 'User does not exist, please sign up first'}), 404
 
     otp = random.randint(100000, 999999)
     user.otp = otp
