@@ -25,6 +25,8 @@ app.config['SESSION_COOKIE_SECURE'] = True  # For HTTPS
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_FILE_DIR'] = 'Sessions'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+app.config['SESSION_COOKIE_SECURE'] = True
 Session(app)
 init_jwt(app)
 init_mail(app)

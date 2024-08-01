@@ -31,15 +31,11 @@ def signup():
         'email': email,
         'otp': otp
     }
-    # new_user = User(username=username, password=password, email=email, is_verified=False, otp=otp)
-    # db.session.add(new_user)
-    # db.session.commit()
 
     msg = Message('Verification OTP', recipients=[email])
     msg.body = f'Your OTP for verification is: {otp}'
     mail.send(msg)
     print(session)
-    # token = generate_token(see)
     return jsonify({'success': 'Account created successfully. Please verify your email to proceed.'}), 201
 
 
@@ -48,7 +44,7 @@ def signup():
 def signup_verification():
     data = request.json
     otp = int(data.get('otp'))
-    print(session.get('user_data'))
+    
     if 'user_data' not in session:
         return jsonify({'error': 'No signup session found. Please signup first.'}), 400
 
