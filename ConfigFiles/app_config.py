@@ -10,7 +10,11 @@ from DataBase.db_config import init_db
 from Utilities.utilities import init_jwt,init_mail
 from Access.access import auth_app
 from Workspace.workspaces import Workspace_app
+
+
+from DataBase.db_config import User, Workspaces  
 app = Flask(__name__)
+
 CORS(app, origins=['http://localhost:3000'], supports_credentials=True)
 
 app.config['SECRET_KEY'] = '!nS72@wq$u%xY'
@@ -34,7 +38,6 @@ init_db(app)
 
 app.register_blueprint(blueprint=auth_app, url_prefix='/auth')
 app.register_blueprint(blueprint=Workspace_app, url_prefix = '/workspace')
-
 
 if __name__ == '__main__':
     app.run(debug=True)

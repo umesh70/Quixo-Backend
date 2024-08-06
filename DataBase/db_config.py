@@ -1,6 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
-
-
+from Admin.adminView import UserView,workspaceView
+from flask_admin import Admin
 db = SQLAlchemy()
 
 class User(db.Model):
@@ -25,5 +25,8 @@ def init_db(app):
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     db.init_app(app)
+    admin = Admin(app, name='Admin panel', template_mode='bootstrap3')
+    admin.add_view(UserView(User,db.session))
+    admin.add_view(workspaceView(Workspaces,db.session))
     with app.app_context():
         db.create_all()

@@ -8,14 +8,11 @@ mail = Mail()
 def init_mail(app):
     mail.init_app(app)
 
-
 #JWT utility 
 jwt = JWTManager()
 
 def init_jwt(app):
     jwt.init_app(app)
-
-
 
 def generate_token(user_id):
         expires = timedelta(days=1)
