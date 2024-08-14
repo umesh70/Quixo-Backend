@@ -6,3 +6,7 @@ class UserView(ModelView):
     
 class workspaceView(ModelView):
     column_list = ('workspace_id','workspace_name','description','admin_id','admin_mail')
+
+
+class MembersView(ModelView):
+    column_list = ('workspace_id','user_id','email','role','invited_at','joined_at')

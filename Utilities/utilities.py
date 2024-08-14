@@ -20,3 +20,10 @@ def generate_token(user_id):
         token = create_access_token(
             identity=user_id, expires_delta=expires, additional_claims=additional_claims)
         return token
+
+def generate_mailToken(email):
+    expires = timedelta(days=1)
+    additional_claims = {'sub': email}
+    token = create_access_token(
+            identity=email, expires_delta=expires, additional_claims=additional_claims)
+    return token
