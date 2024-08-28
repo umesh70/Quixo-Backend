@@ -12,7 +12,6 @@ from Access.access import auth_app
 from Workspace.workspaces import Workspace_app
 
 
-from DataBase.db_config import User, Workspace,WorkspaceMember  
 app = Flask(__name__)
 
 CORS(app, origins=['http://localhost:3000'], supports_credentials=True)

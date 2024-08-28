@@ -3,14 +3,15 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from flask import request, jsonify, Blueprint
-from DataBase.db_config import db, User, Workspace,WorkspaceMember
+from DataBase.db_config import db, User, Workspace,WorkspaceMember,InviteTokens
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask_jwt_extended import jwt_required
 from flask import request, jsonify
 import re
-from Utilities.utilities import generate_mailToken,mail
+from Utilities.utilities import generateToken,mail
 from flask_mail import Message
 from sqlalchemy.exc import IntegrityError
+
 Workspace_app = Blueprint('workspace_points', __name__)
 
 @Workspace_app.route('/create_workspace', methods=['POST'])
@@ -67,50 +68,74 @@ def delete_workspace(id):
     return jsonify({'message': 'Workspace deleted successfully'}), 200
 
 
+
+
+"""
+Endpoint for sending an invite via email(Send invite link to their email)
+"""
+
 @Workspace_app.route('/add_member/<workspace_id>',methods = ['POST'])
 @jwt_required()
 def add_member(workspace_id):
+    
     currentUser = get_jwt_identity()
     workspace = Workspace.query.get_or_404(workspace_id)
+    
+    """
+    check if the current user is the admin 
 
+    """
     if workspace.admin_id != currentUser:
         return jsonify({"error": "You don't have permission to invite members to this workspace"}), 403
 
     Data = request.json
     email = Data['email']
-    role = Data.get('role', 'member')
+    # role = Data.get('role', 'member')
 
     if not email:
         return jsonify({"error": "Email is required"}), 400
     if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
         return jsonify({"error": "Invalid email format"}), 400
-    if role not in ['admin', 'member']:
-        return jsonify({"error": "Invalid role. Must be 'admin' or 'member'"}), 400
+    # if role not in ['admin', 'member']:
+        # return jsonify({"error": "Invalid role. Must be 'admin' or 'member'"}), 400
     
-    user = User.query.filter_by(email=email).first()
+    # """
+    # find the user in the database by email
+    # """
+    # user = User.query.filter_by(email=email).first()
     
-    if not user:
-        try:
-            db.session.flush()
-        except IntegrityError:
-            db.session.rollback()
-            return jsonify({"error": "User with this email already exists"}), 400
+    # if not user:
+    #     try:
+    #         db.session.flush()
+    #     except IntegrityError:
+    #         db.session.rollback()
+    #         return jsonify({"error": "User with this email already exists"}), 400
+    
+
     
     existing_member = WorkspaceMember.query.filter_by(workspace_id=workspace_id, user_id=currentUser).first()
     if existing_member:
         return jsonify({"error": "User is already a member of this workspace"}), 400
 
-    new_member = WorkspaceMember(workspace_id=workspace_id, user_id=currentUser, email=email, role=role)
-    db.session.add(new_member)
+    # new_member = WorkspaceMember(workspace_id=workspace_id, user_id=currentUser, email=email, role=role)
+    # db.session.add(new_member)
 
+    # try:
+    #     db.session.commit()
+    # except IntegrityError:
+    #     db.session.rollback()
+    #     return jsonify({"error": "Failed to add member to workspace"}), 500
+
+    emailtoken = generateToken(email)
+    UserID = generateToken(currentUser)
+    invitationlink = f"http://localhost:5000/invite?token={emailtoken}&UserId={UserID}"
+    newToken = InviteTokens(token=emailtoken,adminID = currentUser,email=email)
+    db.session.add(newToken)
     try:
         db.session.commit()
     except IntegrityError:
         db.session.rollback()
-        return jsonify({"error": "Failed to add member to workspace"}), 500
-
-    token = generate_mailToken(email)
-    invitationlink = f"http://localhost:5000/invite?token={token}"
+        return jsonify({"error": "Failed to add token"}), 500
 
     msg = Message(
         subject="You're Invited!",
