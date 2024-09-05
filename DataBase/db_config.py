@@ -46,7 +46,7 @@ class Workspace(db.Model):
 class InviteTokens(db.Model):
     __tablename__ = "invite_token"
     token = db.Column(db.String(1000), primary_key=True)
-    adminId = db.Column(db.Integer,db.ForeignKey('workspaces.admin_id'),nullable=False)
+    adminID = db.Column(db.Integer,db.ForeignKey('workspaces.admin_id'),nullable=False)
     email = db.Column(db.String(255), nullable=False)
     
 
@@ -57,7 +57,7 @@ class WorkspaceMember(db.Model):
     workspace_id = db.Column(db.Integer, db.ForeignKey('workspaces.workspace_id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     email = db.Column(db.String(255), nullable=False)
-    invited_at = db.Column(db.DateTime, default=datetime.now(datetime.now))
+    invited_at = db.Column(db.DateTime, default=datetime.utcnow)
     joined_at = db.Column(db.DateTime)
 
     # Relationship to the workspace this membership belongs to

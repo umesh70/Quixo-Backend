@@ -7,10 +7,11 @@ from flask import request, jsonify,Blueprint,session
 from flask_mail import Message
 import random
 from  Utilities.utilities import mail , jwt, generate_token
-
+from redis import Redis
+from flask_jwt_extended import jwt_required,get_jwt_identity
 
 auth_app = Blueprint('auth',__name__)
-
+redisClient = Redis()
 @auth_app.route('/signup', methods=['POST'])
 def signup():
     data = request.json
@@ -85,6 +86,7 @@ def login():
         return jsonify({'error': 'Invalid credentials'}), 401
 
     token = generate_token(user.id)
+    redisClient.setex(f"userSession:{user.email}",259200,"active")
     return jsonify({'success': 'Login successful', 'token': token, 'username': user.username, 'email': user.email}), 200
 
 @auth_app.route('/pw_forget', methods=['POST'])
@@ -137,3 +139,29 @@ def protected():
         return jsonify({'message': 'Token expired'}), 401
     except jwt.InvalidTokenError:
         return jsonify({'message': 'Invalid token'}), 401
+    
+
+
+def ActiveSession(email):
+    # Construct the key using userID and email
+    session_key = f"userSession:{email}"
+    # Check if the session key exists in Redis
+    if redisClient.get(session_key) is not None:
+        return True
+    return False
+
+
+
+@auth_app.route('/logout', methods=['POST'])
+@jwt_required()
+def logout():
+    currentUser = get_jwt_identity()  
+    user_email = currentUser['email']
+    
+    # Construct the session key
+    session_key = f"userSession:{user_email}"
+    
+    # Delete the session key from Redis
+    redisClient.delete(session_key)
+    
+    return jsonify({"msg": "Successfully logged out"}), 200

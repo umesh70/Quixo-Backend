@@ -2,15 +2,17 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from flask import request, jsonify, Blueprint
+from flask import request, jsonify, Blueprint, url_for
 from DataBase.db_config import db, User, Workspace,WorkspaceMember,InviteTokens
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask_jwt_extended import jwt_required
 from flask import request, jsonify
 import re
-from Utilities.utilities import generateToken,mail
+from Utilities.utilities import generate_token,mail
 from flask_mail import Message
 from sqlalchemy.exc import IntegrityError
+from Access.access import ActiveSession,signup,login
+
 
 Workspace_app = Blueprint('workspace_points', __name__)
 
@@ -68,8 +70,6 @@ def delete_workspace(id):
     return jsonify({'message': 'Workspace deleted successfully'}), 200
 
 
-
-
 """
 Endpoint for sending an invite via email(Send invite link to their email)
 """
@@ -80,7 +80,7 @@ def add_member(workspace_id):
     
     currentUser = get_jwt_identity()
     workspace = Workspace.query.get_or_404(workspace_id)
-    
+    baselink = "http://localhost:5000"
     """
     check if the current user is the admin 
 
@@ -99,11 +99,23 @@ def add_member(workspace_id):
     # if role not in ['admin', 'member']:
         # return jsonify({"error": "Invalid role. Must be 'admin' or 'member'"}), 400
     
-    # """
-    # find the user in the database by email
-    # """
-    # user = User.query.filter_by(email=email).first()
+    """
+    find the user in the database by email
+    """
     
+    user = User.query.filter_by(email=email).first()
+    """
+    is user is logged in create a link which directly redirects the user to the workspace which the user is invited to.
+    else, create a link first which redirects the user to signup.
+    """
+    if user:
+        if ActiveSession(user.email):
+            print(email)
+        else:
+            invitationLink = url_for('login',)
+            print("user is not logged in")
+    else:
+        print("no user")
     # if not user:
     #     try:
     #         db.session.flush()
@@ -126,8 +138,8 @@ def add_member(workspace_id):
     #     db.session.rollback()
     #     return jsonify({"error": "Failed to add member to workspace"}), 500
 
-    emailtoken = generateToken(email)
-    UserID = generateToken(currentUser)
+    emailtoken = generate_token(email)
+    UserID = generate_token(currentUser)
     invitationlink = f"http://localhost:5000/invite?token={emailtoken}&UserId={UserID}"
     newToken = InviteTokens(token=emailtoken,adminID = currentUser,email=email)
     db.session.add(newToken)
@@ -145,3 +157,5 @@ def add_member(workspace_id):
 
     mail.send(msg)
     return f"email sent successfully",200
+
+

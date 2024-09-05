@@ -14,16 +14,18 @@ jwt = JWTManager()
 def init_jwt(app):
     jwt.init_app(app)
 
-def generate_token(user_id):
-        expires = timedelta(days=1)
-        additional_claims = {'sub': user_id}
-        token = create_access_token(
-            identity=user_id, expires_delta=expires, additional_claims=additional_claims)
-        return token
-
-def generateToken(data):
+def generate_token(email):
     expires = timedelta(days=1)
-    additional_claims = {'sub': data}
+    additional_claims = {'sub': email}
     token = create_access_token(
-            identity=data, expires_delta=expires, additional_claims=additional_claims)
+        identity=email,  # Include both user_id and email in the identity
+        expires_delta=expires,
+        additional_claims=additional_claims
+    )
     return token
+# def generateToken(data):
+#     expires = timedelta(days=1)
+#     additional_claims = {'sub': data}
+#     token = create_access_token(
+#             identity=data, expires_delta=expires, additional_claims=additional_claims)
+#     return token
