@@ -3,7 +3,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from flask import request, jsonify, Blueprint, url_for,redirect
-from DataBase.db_config import db, User, Workspace,WorkspaceMember,InviteTokens
+from DataBase.db_config import db, User, Workspace,WorkspaceMember
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask_jwt_extended import jwt_required
 from flask import request, jsonify

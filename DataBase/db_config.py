@@ -1,5 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
-from Admin.adminView import UserView,workspaceView,MembersView
+from Admin.adminView import UserView,workspaceView,MembersView,tokenview
 from flask_admin import Admin
 from datetime import datetime
 
@@ -43,12 +43,14 @@ class Workspace(db.Model):
     def __repr__(self):
         return f'<Workspace {self.workspace_name}>'
 
-class InviteTokens(db.Model):
-    __tablename__ = "invite_token"
-    token = db.Column(db.String(1000), primary_key=True)
-    adminID = db.Column(db.Integer,db.ForeignKey('workspaces.admin_id'),nullable=False)
-    email = db.Column(db.String(255), nullable=False)
-    
+class Token(db.Model):
+    __tablename__ = "tokens"
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    token = db.Column(db.String(255), nullable=False)
+
+    def __repr__(self):
+        return f'<Token {self.token}>'
 
 class WorkspaceMember(db.Model):
     __tablename__ = 'workspace_members'
@@ -81,6 +83,6 @@ def init_db(app):
     admin.add_view(UserView(User,db.session))
     admin.add_view(workspaceView(Workspace,db.session))
     admin.add_view(MembersView(WorkspaceMember,db.session))
-
+    admin.add_view(tokenview(Token,db.session))
     with app.app_context():
         db.create_all()

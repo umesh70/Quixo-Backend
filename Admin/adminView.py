@@ -10,3 +10,6 @@ class workspaceView(ModelView):
 
 class MembersView(ModelView):
     column_list = ('workspace_id','user_id','email','role','invited_at','joined_at')
+
+class tokenview(ModelView):
+    column_list = ('token','email')

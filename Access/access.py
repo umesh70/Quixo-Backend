@@ -2,7 +2,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from DataBase.db_config import db, User
+from DataBase.db_config import db, User,Token
 from flask import request, jsonify,Blueprint,session
 from flask_mail import Message
 import random
@@ -84,9 +84,17 @@ def login():
 
     if user.password != password:
         return jsonify({'error': 'Invalid credentials'}), 401
-
-    token = generate_token(user.id)
-    redisClient.setex(f"userSession:{user.email}",259200,"active")
+    
+    # redisClient.setex(f"userSession:{user.email}", 259200, session_data)
+    token = generate_token(user.email)
+    newToken = Token(
+        token=token,
+        email=email
+    )
+    db.session.add(newToken)
+    db.session.commit()
+    print(token)
+    # redisClient.setex(f"userSession:{user.email}:{token}",259200,'active')
     return jsonify({'success': 'Login successful', 'token': token, 'username': user.username, 'email': user.email}), 200
 
 @auth_app.route('/pw_forget', methods=['POST'])
@@ -125,6 +133,7 @@ def pw_reset():
 
     return jsonify({'success': 'Password reset successful'}), 200
 
+
 @auth_app.route('/protected', methods=['GET'])
 def protected():
     token = request.headers.get('Authorization')
@@ -151,17 +160,28 @@ def ActiveSession(email):
     return False
 
 
-
-@auth_app.route('/logout', methods=['POST'])
+@auth_app.route('/logout', methods=['POST','GET'])
 @jwt_required()
 def logout():
-    currentUser = get_jwt_identity()  
-    user_email = currentUser['email']
-    
-    # Construct the session key
-    session_key = f"userSession:{user_email}"
-    
-    # Delete the session key from Redis
-    redisClient.delete(session_key)
-    
-    return jsonify({"msg": "Successfully logged out"}), 200
+    print("check")
+    try:
+        data = request.json
+        email = data.get('email')
+        print(email)
+        if not email:
+            return jsonify({"msg": "Email not provided"}), 400
+        
+        # Check if a token associated with the email exists in the Token table
+        token = Token.query.filter_by(email=email).first()
+        if token:
+            # Delete the token from the Token table
+            db.session.delete(token)
+            db.session.commit()
+            
+            return jsonify({"msg": "Successfully logged out"}), 200
+        else:
+            return jsonify({"msg": "No active session found for this email"}), 404
+    except Exception as e:
+        return jsonify({"msg": f"An error occurred: {str(e)}"}), 500
+        
+ 
