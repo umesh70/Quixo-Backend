@@ -38,8 +38,41 @@ def create_workspace():
 
 
 
-@Workspace_app.route('/get_workspaces', methods=['GET', 'POST'])
+
+
+@Workspace_app.route('/api/workspaces/<int:user_id>', methods=['GET'])
 @jwt_required()
+def get_user_workspaces(user_id):
+    # Query workspaces created by the user (where user is admin)
+    created_workspaces = Workspace.query.filter_by(admin_id=user_id).all()
+    
+    # Query workspaces the user is invited to
+    invited_workspaces = (
+        Workspace.query
+        .join(WorkspaceMember)
+        .filter(WorkspaceMember.user_id == user_id)
+        .filter(Workspace.admin_id != user_id)
+        .all()
+    )
+    
+    # Function to convert workspace object to dictionary
+    def workspace_to_dict(workspace):
+        return {
+            'workspace_id': workspace.workspace_id,
+            'workspace_name': workspace.workspace_name,
+            'description': workspace.description,
+            'admin_mail': workspace.admin_mail
+        }
+    
+    # Convert query results to list of dictionaries
+    created_workspaces_list = [workspace_to_dict(w) for w in created_workspaces]
+    invited_workspaces_list = [workspace_to_dict(w) for w in invited_workspaces]
+    
+    return jsonify({
+        'created_workspaces': created_workspaces_list,
+        'invited_workspaces': invited_workspaces_list
+    })
+
 def get_workspaces():
     # Query the database for all the workspaces
     workspaces = Workspace.query.order_by(Workspace.admin_id.asc()).all()
@@ -105,6 +138,72 @@ def add_member(workspace_id):
     print(inviteLink)
         # else:
         #     inviteLink = url_for("login",)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # def add_member(workspace_id):
     

@@ -43,15 +43,6 @@ class Workspace(db.Model):
     def __repr__(self):
         return f'<Workspace {self.workspace_name}>'
 
-class Token(db.Model):
-    __tablename__ = "tokens"
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    token = db.Column(db.String(255), nullable=False)
-
-    def __repr__(self):
-        return f'<Token {self.token}>'
-
 class WorkspaceMember(db.Model):
     __tablename__ = 'workspace_members'
 
@@ -74,6 +65,15 @@ class WorkspaceMember(db.Model):
 
     def __repr__(self):
         return f'<WorkspaceMember {self.email} in {self.workspace.workspace_name}>'
+
+class Token(db.Model):
+    __tablename__ = "tokens"
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    token = db.Column(db.String(255), nullable=False)
+
+    def __repr__(self):
+        return f'<Token {self.token}>'
 
 def init_db(app):
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
