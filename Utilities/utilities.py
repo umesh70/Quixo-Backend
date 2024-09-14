@@ -15,7 +15,7 @@ def init_jwt(app):
     jwt.init_app(app)
 
 def generate_token(data):
-    expires = timedelta(minutes=20)
+    expires = timedelta(days=30)
     additional_claims = {'sub': data}
     token = create_access_token(
         identity=data, 
