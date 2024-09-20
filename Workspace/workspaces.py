@@ -75,23 +75,6 @@ def get_user_workspaces(user_id):
         'invited_workspaces': invited_workspaces_list
     })
 
-def get_workspaces():
-    # Query the database for all the workspaces
-    workspaces = Workspace.query.order_by(Workspace.admin_id.asc()).all()
-    workspace_list = []
-    for workspace in workspaces:
-        workspace_data = {
-            'id': workspace.workspace_id,
-            'workspace_name': workspace.workspace_name,
-            'admin_mail': workspace.admin_mail,
-            'admin_id': workspace.admin_id,
-            'description': workspace.description
-        }
-        workspace_list.append(workspace_data)
-
-    return jsonify(workspace_list), 200
-
-
 @Workspace_app.route('/delete_workspace/<id>', methods=['DELETE'])
 @jwt_required()
 def delete_workspace(id):
