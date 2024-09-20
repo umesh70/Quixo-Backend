@@ -86,7 +86,7 @@ def login():
         return jsonify({'error': 'Invalid credentials'}), 401
     
     # redisClient.setex(f"userSession:{user.email}", 259200, session_data)
-    token = generate_token(user.email)
+    token = generate_token(user.id)
     newToken = Token(
         token=token,
         email=email

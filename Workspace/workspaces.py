@@ -12,7 +12,8 @@ from Utilities.utilities import generate_token,mail
 from flask_mail import Message
 from sqlalchemy.exc import IntegrityError
 from Access.access import ActiveSession,signup,login
-
+import secrets
+import datetime
 
 Workspace_app = Blueprint('workspace_points', __name__)
 
@@ -40,7 +41,7 @@ def create_workspace():
 
 
 
-@Workspace_app.route('/api/workspaces/<int:user_id>', methods=['GET'])
+@Workspace_app.route('/get_user_workspaces/<int:user_id>', methods=['GET'])
 @jwt_required()
 def get_user_workspaces(user_id):
     # Query workspaces created by the user (where user is admin)
@@ -73,21 +74,21 @@ def get_user_workspaces(user_id):
         'invited_workspaces': invited_workspaces_list
     })
 
-def get_workspaces():
-    # Query the database for all the workspaces
-    workspaces = Workspace.query.order_by(Workspace.admin_id.asc()).all()
-    workspace_list = []
-    for workspace in workspaces:
-        workspace_data = {
-            'id': workspace.workspace_id,
-            'workspace_name': workspace.workspace_name,
-            'admin_mail': workspace.admin_mail,
-            'admin_id': workspace.admin_id,
-            'description': workspace.description
-        }
-        workspace_list.append(workspace_data)
+# def get_workspaces():
+#     # Query the database for all the workspaces
+#     workspaces = Workspace.query.order_by(Workspace.admin_id.asc()).all()
+#     workspace_list = []
+#     for workspace in workspaces:
+#         workspace_data = {
+#             'id': workspace.workspace_id,
+#             'workspace_name': workspace.workspace_name,
+#             'admin_mail': workspace.admin_mail,
+#             'admin_id': workspace.admin_id,
+#             'description': workspace.description
+#         }
+#         workspace_list.append(workspace_data)
 
-    return jsonify(workspace_list), 200
+#     return jsonify(workspace_list), 200
 
 
 @Workspace_app.route('/delete_workspace/<id>', methods=['DELETE'])
@@ -111,18 +112,16 @@ Endpoint for sending an invite via email(Send invite link to their email)
 @Workspace_app.route('/add_member/<workspace_id>',methods = ['POST'])
 @jwt_required()
 def add_member(workspace_id):
-    currentUser = get_jwt_identity()
-    workSpace = Workspace.query.get_or_404(workspace_id)
-    baselink = "http://localhost:5000"
-
-    """
-    check if the current user is the admin 
-    """
-    if workSpace.admin_id != currentUser:
+    current_user = get_jwt_identity()
+    print(current_user)
+    workspace = Workspace.query.get_or_404(workspace_id)
+    print(workspace.admin_id)
+    # Check if the current user is the admin
+    if workspace.admin_id != current_user:
         return jsonify({"error": "You don't have permission to invite members to this workspace"}), 403
     
     data = request.json
-    email = data['email']
+    email = data.get('email')
 
     if not email:
         return jsonify({"error": "Email is required"}), 400
@@ -131,21 +130,57 @@ def add_member(workspace_id):
  
     user = User.query.filter_by(email=email).first()
 
+    # Check if the user is already a member of the workspace
+    existing_member = WorkspaceMember.query.filter_by(workspace_id=workspace_id, email=email).first()
+    if existing_member:
+        return jsonify({"error": "User is already a member of this workspace"}), 400
+
+    # Generate a unique invitation token
+    invitation_token = secrets.token_urlsafe(32)
+
     if user:
-        if ActiveSession(user.email):
-            # inviteLink = f"{baselink}/dashboard?workspace_id={workspace_id}"
-            inviteLink = url_for("dashboard", workspace_id=workspace_id, _external=True)
-    print(inviteLink)
-        # else:
-        #     inviteLink = url_for("login",)
+        # User exists, create a new workspace membership
+        new_member = WorkspaceMember(workspace_id=workspace_id, user_id=user.id, email=email, invited_at=datetime.utcnow())
+        db.session.add(new_member)
+        invite_link = url_for("accept_invitation", token=invitation_token, _external=True)
+    else:
+        # User doesn't exist, create an invitation
+        invite_link = url_for("signup", invitation_token=invitation_token, _external=True)
+    
+    print(invite_link)
+
+    # # Create an invitation record
+    # invitation = Invitation(
+    #     email=email,
+    #     workspace_id=workspace_id,
+    #     token=invitation_token,
+    #     expires_at=datetime.utcnow() + timedelta(days=7)  # Set expiration to 7 days from now
+    # )
+    # db.session.add(invitation)
+
+    try:
+        db.session.commit()
+        # Send invitation email
+        send_invitation_email(email, invite_link, workspace.workspace_name)
+        return jsonify({
+            "message": "Invitation sent successfully",
+            "invite_link": invite_link
+        }), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
 
 
 
 
-
-
-
+def send_invitation_email(email, invite_link, workspace_name):
+    msg = Message(
+        subject=f"Invitation to join {workspace_name} on Workspace App",
+        recipients=[email],
+        body=f"Hi,\n\nYou have been invited to join the workspace '{workspace_name}'.\n\nPlease use the following link to join:\n\n{invite_link}\n\nBest regards,\nWorkspace App Team"
+    )
+    mail.send(msg)
 
 
 
