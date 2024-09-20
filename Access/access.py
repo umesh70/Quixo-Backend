@@ -69,7 +69,7 @@ def signup_verification():
     session.pop('user_data', None)
 
     token = generate_token(new_user.id)
-    return jsonify({'success': 'Account created and verified successfully.', 'token': token, 'username': new_user.username, 'email': new_user.email}), 201
+    return jsonify({'success': 'Account created and verified successfully.', 'token': token, 'id':new_user.id, 'username': new_user.username, 'email': new_user.email}), 201
     
 @auth_app.route('/login', methods=['POST'])
 def login():
@@ -95,7 +95,7 @@ def login():
     db.session.commit()
     print(token)
     # redisClient.setex(f"userSession:{user.email}:{token}",259200,'active')
-    return jsonify({'success': 'Login successful', 'token': token, 'username': user.username, 'email': user.email}), 200
+    return jsonify({'success': 'Login successful', 'token': token, 'id':user.id, 'username': user.username, 'email': user.email}), 200
 
 @auth_app.route('/pw_forget', methods=['POST'])
 def pw_forget():
