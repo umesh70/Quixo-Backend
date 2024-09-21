@@ -42,11 +42,13 @@ def create_workspace():
 
 
 @Workspace_app.route('/get_user_workspaces/<int:user_id>', methods=['GET'])
+@Workspace_app.route('/get_user_workspaces/<int:user_id>', methods=['GET'])
 @jwt_required()
 def get_user_workspaces(user_id):
     # Query workspaces created by the user (where user is admin)
     created_workspaces = Workspace.query.filter_by(admin_id=user_id).all()
-    
+    print(created_workspaces)
+
     # Query workspaces the user is invited to
     invited_workspaces = (
         Workspace.query
@@ -55,7 +57,8 @@ def get_user_workspaces(user_id):
         .filter(Workspace.admin_id != user_id)
         .all()
     )
-    
+    print(invited_workspaces)
+
     # Function to convert workspace object to dictionary
     def workspace_to_dict(workspace):
         return {
