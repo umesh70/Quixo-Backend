@@ -10,20 +10,21 @@ from DataBase.db_config import init_db
 from Utilities.utilities import init_jwt,init_mail
 from Access.access import auth_app
 from Workspace.workspaces import Workspace_app
-
+from dotenv import load_dotenv
 
 app = Flask(__name__)
+load_dotenv()
 
 CORS(app, origins=['http://localhost:3000'], supports_credentials=True)
 
-app.config['SECRET_KEY'] = '!nS72@wq$u%xY'
+app.config['SECRET_KEY'] = os.getenv('appsecretkey')
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'work.umesh12@gmail.com'
-app.config['MAIL_PASSWORD'] = 'dagxifrxryaeovyl'
-app.config['MAIL_DEFAULT_SENDER'] = 'work.umesh12@gmail.com'
+app.config['MAIL_USERNAME'] = os.getenv('email')
+app.config['MAIL_PASSWORD'] = os.getenv('emailPassword')
+app.config['MAIL_DEFAULT_SENDER'] = os.getenv('mailsender')
 app.config['SESSION_COOKIE_SECURE'] = True  # For HTTPS
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_FILE_DIR'] = 'Sessions'

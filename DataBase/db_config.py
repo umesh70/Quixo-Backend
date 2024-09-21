@@ -75,6 +75,11 @@ class Token(db.Model):
     def __repr__(self):
         return f'<Token {self.token}>'
 
+
+class WorkspaceToken(db.Model):
+    __tablename__ = "workspacetokens"
+    id = db.Column(db.Integer, primary_key=True)
+
 def init_db(app):
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False

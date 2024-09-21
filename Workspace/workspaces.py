@@ -13,7 +13,7 @@ from flask_mail import Message
 from sqlalchemy.exc import IntegrityError
 from Access.access import ActiveSession,signup,login
 import secrets
-import datetime
+from datetime import datetime
 
 Workspace_app = Blueprint('workspace_points', __name__)
 
@@ -112,10 +112,13 @@ Endpoint for sending an invite via email(Send invite link to their email)
 @Workspace_app.route('/add_member/<workspace_id>',methods = ['POST'])
 @jwt_required()
 def add_member(workspace_id):
+
+    baseURL = "http://localhost:3000"
     current_user = get_jwt_identity()
     print(current_user)
     workspace = Workspace.query.get_or_404(workspace_id)
-    print(workspace.admin_id)
+   
+    workspaceName = workspace.workspace_name
     # Check if the current user is the admin
     if workspace.admin_id != current_user:
         return jsonify({"error": "You don't have permission to invite members to this workspace"}), 403
@@ -136,16 +139,25 @@ def add_member(workspace_id):
         return jsonify({"error": "User is already a member of this workspace"}), 400
 
     # Generate a unique invitation token
-    invitation_token = secrets.token_urlsafe(32)
+    invitation_token = generate_token(email)
 
     if user:
-        # User exists, create a new workspace membership
-        new_member = WorkspaceMember(workspace_id=workspace_id, user_id=user.id, email=email, invited_at=datetime.utcnow())
-        db.session.add(new_member)
-        invite_link = url_for("accept_invitation", token=invitation_token, _external=True)
+        if ActiveSession(user.email):
+            """
+            user exists and logged in 
+            """
+            invite_link = f"{baseURL}/dashboard/{workspace_id}/{workspaceName}/boards"
+        else:
+            """
+            user exists but not logged in
+            http://localhost:3000/login?token=
+            """
+            invite_link = f"{baseURL}/login?token={invitation_token}"
+        """
+        http://localhost:3000/signup?token=
+        """
     else:
-        # User doesn't exist, create an invitation
-        invite_link = url_for("signup", invitation_token=invitation_token, _external=True)
+            invite_link = f"{baseURL}/signup?token={invitation_token}"
     
     print(invite_link)
 
@@ -160,8 +172,13 @@ def add_member(workspace_id):
 
     try:
         db.session.commit()
+        msg = Message()
+        msg = Message("Invitation to join {workspace.workspace_name} on Trello      workspace",
+        recipients=[email])
+        msg.body = f"Hi,\n\nYou have been invited to join the workspace '{workspaceName}'.\n\nPlease use the following link to join:\n\n{invite_link}\n\nBest regards"
+        mail.send(msg)
         # Send invitation email
-        send_invitation_email(email, invite_link, workspace.workspace_name)
+        # send_invitation_email(email, invite_link, workspace.workspace_name)
         return jsonify({
             "message": "Invitation sent successfully",
             "invite_link": invite_link
@@ -171,16 +188,13 @@ def add_member(workspace_id):
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
 
-
-
-
-def send_invitation_email(email, invite_link, workspace_name):
-    msg = Message(
-        subject=f"Invitation to join {workspace_name} on Workspace App",
-        recipients=[email],
-        body=f"Hi,\n\nYou have been invited to join the workspace '{workspace_name}'.\n\nPlease use the following link to join:\n\n{invite_link}\n\nBest regards,\nWorkspace App Team"
-    )
-    mail.send(msg)
+# def send_invitation_email(email, invite_link, workspace_name):
+#     msg = Message(
+#         subject=f"Invitation to join {workspace_name} on Workspace App",
+#         recipients=[email],
+#         body=f"Hi,\n\nYou have been invited to join the workspace '{workspace_name}'.\n\nPlease use the following link to join:\n\n{invite_link}\n\nBest regards,\nWorkspace App Team"
+#     )
+#     mail.send(msg)
 
 
 
@@ -323,5 +337,4 @@ def send_invitation_email(email, invite_link, workspace_name):
 
 #     mail.send(msg)
 #     return f"email sent successfully",200
-
 
