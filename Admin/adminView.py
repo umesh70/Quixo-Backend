@@ -16,3 +16,6 @@ class TokenView(ModelView):
 
 class BoardView(ModelView):
     column_list = ('id', 'name', 'description', 'workspace_id')
+
+class GradientView(ModelView):
+    column_list = ('id', 'gradient')

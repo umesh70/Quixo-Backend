@@ -1,5 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
-from Admin.adminView import UserView, WorkspaceView, MemberView, TokenView, BoardView
+from Admin.adminView import UserView, WorkspaceView, MemberView, TokenView, BoardView, GradientView
 from flask_admin import Admin
 from datetime import datetime
 
@@ -90,12 +90,30 @@ class Board(db.Model):
     name = db.Column(db.String(50), nullable = False)
     description = db.Column(db.String(250))
     workspace_id = db.Column(db.Integer, db.ForeignKey('workspaces.workspace_id'), nullable = False)
+    gradient_id = db.Column(db.Integer, db.ForeignKey('board_gradients.id'), nullable = False)
 
     #Relationship to the workspace to which this board belongs
     workspace = db.relationship('Workspace', back_populates = 'board')
 
+    #Relationship to the gradient which this board uses
+    gradient = db.relationship('BoardGradients', back_populates = 'boards')
+
+
     def __repr__(self):
         return f'<Board {self.name}>'
+    
+class BoardGradients(db.Model):
+    __tablename__ = "board_gradients"
+
+    id = db.Column(db.Integer, primary_key = True)
+    gradient = db.Column(db.String(100), nullable = False)
+
+    #Relationship to the boards which use this gradient
+    boards = db.relationship('Board', back_populates = 'gradient', cascade = "all, delete-orphan")
+
+    def __repr__(self):
+        return f'<Gradient {self.id}>'
+
 
 def init_db(app):
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
@@ -107,6 +125,7 @@ def init_db(app):
     admin.add_view(MemberView(WorkspaceMember,db.session))
     admin.add_view(TokenView(Token, db.session))
     admin.add_view(BoardView(Board, db.session))
+    admin.add_view(GradientView(BoardGradients, db.session))
 
     with app.app_context():
         db.create_all()
