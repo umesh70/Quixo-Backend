@@ -33,6 +33,8 @@ def create_workspace():
         return jsonify({'error': 'Invalid user'}), 404
     new_workspace = Workspace(workspace_name=workspace_name,
                                admin_mail=admin_mail, admin_id=admin_id, description=description)
+    newUser= WorkspaceMember()
+    
     db.session.add(new_workspace)
     db.session.commit()
     return jsonify({'message': f'Workspace {workspace_name} created successfully'}), 201
@@ -149,6 +151,14 @@ def add_member(workspace_id):
             """
             user exists and logged in 
             """
+            workmember = WorkspaceMember(
+                workspace_id = workspace_id,
+                workspace_name = workspaceName,
+                user_id = user.id,
+                email = user.email,
+                userColor = 
+            )
+
             invite_link = f"{baseURL}/dashboard/{workspace_id}/{workspaceName}/boards"
         else:
             """
