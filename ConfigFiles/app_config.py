@@ -10,6 +10,7 @@ from DataBase.db_config import init_db
 from Utilities.utilities import init_jwt,init_mail
 from Access.access import auth_app
 from Workspace.workspaces import Workspace_app
+from Board.boards import board_app
 from dotenv import load_dotenv
 
 app = Flask(__name__)
@@ -36,8 +37,9 @@ init_jwt(app)
 init_mail(app)
 init_db(app)
 
-app.register_blueprint(blueprint=auth_app, url_prefix='/auth')
-app.register_blueprint(blueprint=Workspace_app, url_prefix = '/workspace')
+app.register_blueprint(blueprint = auth_app, url_prefix='/auth')
+app.register_blueprint(blueprint = Workspace_app, url_prefix = '/workspace')
+app.register_blueprint(blueprint = board_app, url_prefix = "/board")
 
 if __name__ == '__main__':
     app.run(debug=True)

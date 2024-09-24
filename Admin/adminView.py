@@ -4,12 +4,18 @@ from flask_admin.contrib.sqla import ModelView
 class UserView(ModelView):
     column_list = ('id', 'username', 'email','password','is_verified','otp')
     
-class workspaceView(ModelView):
+class WorkspaceView(ModelView):
     column_list = ('workspace_id','workspace_name','description','admin_id','admin_mail')
 
 
-class MembersView(ModelView):
+class MemberView(ModelView):
     column_list = ('workspace_id','user_id','email','role','invited_at','joined_at')
 
-class tokenview(ModelView):
+class TokenView(ModelView):
     column_list = ('token','email')
+
+class BoardView(ModelView):
+    column_list = ('id', 'name', 'description', 'workspace_id')
+
+class GradientView(ModelView):
+    column_list = ('id', 'gradient')

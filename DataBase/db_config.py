@@ -1,5 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
-from Admin.adminView import UserView,workspaceView,MembersView,tokenview
+from Admin.adminView import UserView, WorkspaceView, MemberView, TokenView, BoardView, GradientView
 from flask_admin import Admin
 from datetime import datetime
 
@@ -39,6 +39,9 @@ class Workspace(db.Model):
 
     # Relationship to the members of this workspace
     members = db.relationship('WorkspaceMember', back_populates='workspace', cascade="all, delete-orphan")
+
+    # Relationship to the boards which belong to this workspace
+    board = db.relationship('Board', back_populates = 'workspace', cascade = "all, delete-orphan")
 
     def __repr__(self):
         return f'<Workspace {self.workspace_name}>'
@@ -84,14 +87,49 @@ class WorkspaceToken(db.Model):
     def __repr__(self):
         return f'<Token {self.token}>'
 
+class Board(db.Model):
+    __tablename__ = "boards"
+
+    id = db.Column(db.Integer, primary_key = True)
+    name = db.Column(db.String(50), nullable = False)
+    description = db.Column(db.String(250))
+    workspace_id = db.Column(db.Integer, db.ForeignKey('workspaces.workspace_id'), nullable = False)
+    gradient_id = db.Column(db.Integer, db.ForeignKey('board_gradients.id'), nullable = False)
+
+    #Relationship to the workspace to which this board belongs
+    workspace = db.relationship('Workspace', back_populates = 'board')
+
+    #Relationship to the gradient which this board uses
+    gradient = db.relationship('BoardGradients', back_populates = 'boards')
+
+
+    def __repr__(self):
+        return f'<Board {self.name}>'
+    
+class BoardGradients(db.Model):
+    __tablename__ = "board_gradients"
+
+    id = db.Column(db.Integer, primary_key = True)
+    gradient = db.Column(db.String(100), nullable = False)
+
+    #Relationship to the boards which use this gradient
+    boards = db.relationship('Board', back_populates = 'gradient', cascade = "all, delete-orphan")
+
+    def __repr__(self):
+        return f'<Gradient {self.id}>'
+
+
 def init_db(app):
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     db.init_app(app)
     admin = Admin(app, name='Admin panel', template_mode='bootstrap3')
     admin.add_view(UserView(User,db.session))
-    admin.add_view(workspaceView(Workspace,db.session))
-    admin.add_view(MembersView(WorkspaceMember,db.session))
-    admin.add_view(tokenview(Token,db.session))
+    admin.add_view(WorkspaceView(Workspace,db.session))
+    admin.add_view(MemberView(WorkspaceMember,db.session))
+    admin.add_view(TokenView(Token, db.session))
+    admin.add_view(BoardView(Board, db.session))
+    admin.add_view(GradientView(BoardGradients, db.session))
+
     with app.app_context():
         db.create_all()

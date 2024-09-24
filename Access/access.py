@@ -69,6 +69,12 @@ def signup_verification():
     session.pop('user_data', None)
 
     token = generate_token(new_user.id)
+    newToken = Token(
+        token=token,
+        email=user_data['email']
+    )
+    db.session.add(newToken)
+    db.session.commit()
     return jsonify({'success': 'Account created and verified successfully.', 'token': token, 'id':new_user.id, 'username': new_user.username, 'email': new_user.email}), 201
     
 @auth_app.route('/login', methods=['POST'])

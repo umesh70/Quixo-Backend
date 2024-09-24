@@ -3,12 +3,12 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from flask import request, jsonify, Blueprint, url_for,redirect
-from DataBase.db_config import db, User, Workspace,WorkspaceMember
+from DataBase.db_config import db, User, Workspace, WorkspaceMember
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask_jwt_extended import jwt_required
 from flask import request, jsonify
 import re
-from Utilities.utilities import generate_token,mail
+from Utilities.utilities import generate_token, mail
 from flask_mail import Message
 from sqlalchemy.exc import IntegrityError
 from Access.access import ActiveSession,signup,login
@@ -21,7 +21,7 @@ Workspace_app = Blueprint('workspace_points', __name__)
 @jwt_required()
 def create_workspace():
 
-    data = request.json
+    data=request.json
     admin_mail = data['email']
     workspace_name = data['name']
     description = data['description']
