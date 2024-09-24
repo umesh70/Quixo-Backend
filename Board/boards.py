@@ -29,3 +29,20 @@ def create_board():
     db.session.add(new_board)
     db.session.commit()
     return jsonify({'message': f'Board {name} created successfully'}), 201
+
+@board_app.route('/get_boards/<int:workspace_id>', methods = ['GET'])
+@jwt_required()
+def get_boards(workspace_id):
+
+    boards = Board.query.filter_by(workspace_id = workspace_id).all()
+    board_list = []
+    for board in boards:
+        board_data = {
+            'id' : board.id, 
+            'name' : board.name,
+            'description' : board.description,
+            'workspace_id' : board.workspace_id
+        }
+        board_list.append(board_data)
+
+    return jsonify(board_list), 200
