@@ -79,23 +79,6 @@ def get_user_workspaces(user_id):
         'invited_workspaces': invited_workspaces_list
     })
 
-# def get_workspaces():
-#     # Query the database for all the workspaces
-#     workspaces = Workspace.query.order_by(Workspace.admin_id.asc()).all()
-#     workspace_list = []
-#     for workspace in workspaces:
-#         workspace_data = {
-#             'id': workspace.workspace_id,
-#             'workspace_name': workspace.workspace_name,
-#             'admin_mail': workspace.admin_mail,
-#             'admin_id': workspace.admin_id,
-#             'description': workspace.description
-#         }
-#         workspace_list.append(workspace_data)
-
-#     return jsonify(workspace_list), 200
-
-
 @Workspace_app.route('/delete_workspace/<id>', methods=['DELETE'])
 @jwt_required()
 def delete_workspace(id):
@@ -108,6 +91,28 @@ def delete_workspace(id):
     db.session.delete(workspace)
     db.session.commit()
     return jsonify({'message': 'Workspace deleted successfully'}), 200
+
+@Workspace_app.route('/edit_workspace_details/<id>', methods = ['PATCH'])
+@jwt_required()
+def edit_workspace_details(id):
+
+    data = request.json
+    name = data['name']
+    description = data['description']
+
+    workspace = Workspace.query.filter_by(workspace_id = id).first()
+
+    if not workspace:
+        return jsonify({'error' : 'Workspace does not exist'}), 404
+
+    if not name:
+        return jsonify({'error': 'Name is required'}), 400
+    
+    workspace.workspace_name = name
+    workspace.description = description
+    db.session.commit()
+
+    return jsonify({'message': 'Details updated successfully'}), 200
 
 
 """
