@@ -101,6 +101,28 @@ def delete_workspace(id):
     db.session.commit()
     return jsonify({'message': 'Workspace deleted successfully'}), 200
 
+@Workspace_app.route('/edit_workspace_details/<id>', methods = ['PATCH'])
+@jwt_required()
+def edit_workspace_details(id):
+
+    data = request.json
+    name = data['name']
+    description = data['description']
+
+    workspace = Workspace.query.filter_by(workspace_id = id).first()
+
+    if not workspace:
+        return jsonify({'error' : 'Workspace does not exist'}), 404
+
+    if not name:
+        return jsonify({'error': 'Name is required'}), 400
+    
+    workspace.workspace_name = name
+    workspace.description = description
+    db.session.commit()
+
+    return jsonify({'message': 'Details updated successfully'}), 200
+
 
 """
 Endpoint for sending an invite via email(Send invite link to their email)
