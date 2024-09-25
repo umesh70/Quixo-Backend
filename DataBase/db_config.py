@@ -50,9 +50,9 @@ class WorkspaceMember(db.Model):
     __tablename__ = 'workspace_members'
 
     id = db.Column(db.Integer, primary_key=True)
-    workspaceID = db.Column(db.Integer, db.ForeignKey('workspaces.workspace_id'), nullable=False)
-    workspacName = db.Column(db.String(255), nullable=False)
-    userID = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    workspace_id = db.Column(db.Integer, db.ForeignKey('workspaces.workspace_id'), nullable=False)
+    workspac_name = db.Column(db.String(255), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     email = db.Column(db.String(255), nullable=False)
     status = db.Column(db.String(255), nullable=False)
     userColor = db.Column(db.String(255), nullable=False)

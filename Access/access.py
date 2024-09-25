@@ -24,10 +24,10 @@ def signup():
     username = data.get('username')
     password = data.get('password')
     email = data.get('email')
-    workspceName = data.get('workspaceName')
-    workspaceID = data.get('workspaceID')
+    workspceName = data.get('workspace_name')
+    workspace_id = data.get('workspace_id')
     emailToken = data.get('token')
-    userID = data.get('userID')
+    user_id = data.get('user_id')
 
     if not username or not password or not email:
         return jsonify({'error': 'Username, password, and email are required'}), 400
@@ -46,9 +46,9 @@ def signup():
     
     if WorkspaceToken.query.filter(WorkspaceToken.email == email):
         workspacemember  = WorkspaceMember(
-            workspaceID = workspaceID,
+            workspace_id = workspace_id,
             workspceName = workspceName,
-            userID = userID,
+            user_id = user_id,
             email = email,
             status = "Member",
             userColor = colorFunction()
@@ -181,7 +181,7 @@ def protected():
 
 
 def ActiveSession(email):
-    # Construct the key using userID and email
+    # Construct the key using user_id and email
     session_key = f"userSession:{email}"
     # Check if the session key exists in Redis
     if redisClient.get(session_key) is not None:

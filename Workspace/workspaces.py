@@ -36,9 +36,9 @@ def create_workspace():
                                admin_mail=admin_mail, admin_id=admin_id, description=description)
 
     workmember = WorkspaceMember(
-                workspaceID = new_workspace.workspace_id,
-                workspaceName = workspace_name,
-                userID = user.id,
+                workspace_id = new_workspace.workspace_id,
+                workspace_name = workspace_name,
+                user_id = user.id,
                 email = user.email,
                 userColor = colorFunction(),
                 status= "Admin"
@@ -139,7 +139,7 @@ def add_member(workspace_id):
     print(current_user)
     workspace = Workspace.query.get_or_404(workspace_id)
    
-    workspaceName = workspace.workspace_name
+    workspace_name = workspace.workspace_name
     # Check if the current user is the admin
     if workspace.admin_id != current_user:
         return jsonify({"error": "You don't have permission to invite members to this workspace"}), 403
@@ -168,23 +168,23 @@ def add_member(workspace_id):
             user exists and logged in 
             """
             workmember = WorkspaceMember(
-                workspaceID = workspace_id,
-                workspaceName = workspaceName,
-                userID = user.id,
+                workspace_id = workspace_id,
+                workspace_name = workspace_name,
+                user_id = user.id,
                 email = user.email,
                 userColor = colorFunction(),
                 status= "Member"
             )
             db.session.add(workmember)
             db.session.commit()
-            invite_link = f"{baseURL}/dashboard/{workspace_id}/{workspaceName}/boards"
+            invite_link = f"{baseURL}/dashboard/{workspace_id}/{workspace_name}/boards"
 
         else:
             """
             user exists but not logged in
             http://localhost:3000/login?token=
             """
-            invite_link = f"{baseURL}/login?token={invitation_token}?workspaceID={workspace_id}?workspaceName={workspaceName}?userID={user.id}"
+            invite_link = f"{baseURL}/login?token={invitation_token}?workspace_id={workspace_id}?workspace_name={workspace_name}?user_id={user.id}"
             inviteInfo = WorkspaceToken(
                 token=invitation_token,
                 email= user.email
@@ -194,7 +194,7 @@ def add_member(workspace_id):
         http://localhost:3000/signup?token=
         """
     else:
-            invite_link = f"{baseURL}/signup?token={invitation_token}?workspaceID={workspace_id}?workspaceName={workspaceName}?userID={user.id}"
+            invite_link = f"{baseURL}/signup?token={invitation_token}?workspace_id={workspace_id}?workspace_name={workspace_name}?user_id={user.id}"
             inviteInfo = WorkspaceToken(
                 token=invitation_token,
                 email= user.email
@@ -207,7 +207,7 @@ def add_member(workspace_id):
         msg = Message()
         msg = Message("Invitation to join {workspace.workspace_name} on Trello      workspace",
         recipients=[email])
-        msg.body = f"Hi,\n\nYou have been invited to join the workspace '{workspaceName}'.\n\nPlease use the following link to join:\n\n{invite_link}\n\nBest regards"
+        msg.body = f"Hi,\n\nYou have been invited to join the workspace '{workspace_name}'.\n\nPlease use the following link to join:\n\n{invite_link}\n\nBest regards"
         mail.send(msg)
         # Send invitation email
         # send_invitation_email(email, invite_link, workspace.workspace_name)
