@@ -196,14 +196,6 @@ def add_member(workspace_id):
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
 
-# def send_invitation_email(email, invite_link, workspace_name):
-#     msg = Message(
-#         subject=f"Invitation to join {workspace_name} on Workspace App",
-#         recipients=[email],
-#         body=f"Hi,\n\nYou have been invited to join the workspace '{workspace_name}'.\n\nPlease use the following link to join:\n\n{invite_link}\n\nBest regards,\nWorkspace App Team"
-#     )
-#     mail.send(msg)
-
 
 
 
