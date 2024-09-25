@@ -6,13 +6,17 @@ from DataBase.db_config import db, User,Token,WorkspaceToken,WorkspaceMember
 from flask import request, jsonify,Blueprint,session
 from flask_mail import Message
 import random
-from  Utilities.utilities import mail , jwt, generate_token
+from  Utilities.utilities import mail , jwt, generate_token,colorFunction
 from redis import Redis
 from flask_jwt_extended import jwt_required,get_jwt_identity
 
 auth_app = Blueprint('auth',__name__)
 redisClient = Redis()
 
+
+"""
+    agar user ke liye signup wala link generate hua hai to uske against sirf invitation token hona chhayiye,agar or koi token hai 
+"""
 @auth_app.route('/signup', methods=['POST'])
 def signup():
 
@@ -20,20 +24,17 @@ def signup():
     username = data.get('username')
     password = data.get('password')
     email = data.get('email')
+    workspceName = data.get('workspaceName')
+    workspaceID = data.get('workspaceID')
     emailToken = data.get('token')
-
-    if Token.query.filter(Token.email == email):
-        if WorkspaceToken.query.filer(WorkspaceToken.token == emailToken):
-            newmember = WorkspaceMember(
-                
-            )
-
+    userID = data.get('userID')
 
     if not username or not password or not email:
         return jsonify({'error': 'Username, password, and email are required'}), 400
 
     if User.query.filter((User.username == username) | (User.email == email)).first():
         return jsonify({'error': 'Username or email already exists'}), 409
+
 
     otp = random.randint(111111, 999999)
     session['user_data'] = {
@@ -42,9 +43,21 @@ def signup():
         'email': email,
         'otp': otp
     }
-
+    
+    if WorkspaceToken.query.filter(WorkspaceToken.email == email):
+        workspacemember  = WorkspaceMember(
+            workspaceID = workspaceID,
+            workspceName = workspceName,
+            userID = userID,
+            email = email,
+            status = "Member",
+            userColor = colorFunction()
+        )
+        db.session.add(workspacemember)
+        db.commit()
     msg = Message('Verification OTP', recipients=[email])
     msg.body = f'Your OTP for verification is: {otp}'
+    
     mail.send(msg)
     print(session)
     return jsonify({'success': 'Account created successfully. Please verify your email to proceed.'}), 201

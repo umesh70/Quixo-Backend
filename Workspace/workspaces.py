@@ -36,8 +36,9 @@ def create_workspace():
                                admin_mail=admin_mail, admin_id=admin_id, description=description)
 
     workmember = WorkspaceMember(
-                workspace_name = workspace_name,
-                user_id = user.id,
+                workspaceID = new_workspace.workspace_id,
+                workspaceName = workspace_name,
+                userID = user.id,
                 email = user.email,
                 userColor = colorFunction(),
                 status= "Admin"
@@ -100,6 +101,7 @@ def delete_workspace(id):
     db.session.delete(workspace)
     db.session.commit()
     return jsonify({'message': 'Workspace deleted successfully'}), 200
+
 
 @Workspace_app.route('/edit_workspace_details/<id>', methods = ['PATCH'])
 @jwt_required()
@@ -182,7 +184,7 @@ def add_member(workspace_id):
             user exists but not logged in
             http://localhost:3000/login?token=
             """
-            invite_link = f"{baseURL}/login?token={invitation_token}"
+            invite_link = f"{baseURL}/login?token={invitation_token}?workspaceID={workspace_id}?workspaceName={workspaceName}?userID={user.id}"
             inviteInfo = WorkspaceToken(
                 token=invitation_token,
                 email= user.email
@@ -192,7 +194,7 @@ def add_member(workspace_id):
         http://localhost:3000/signup?token=
         """
     else:
-            invite_link = f"{baseURL}/signup?token={invitation_token}"
+            invite_link = f"{baseURL}/signup?token={invitation_token}?workspaceID={workspace_id}?workspaceName={workspaceName}?userID={user.id}"
             inviteInfo = WorkspaceToken(
                 token=invitation_token,
                 email= user.email
