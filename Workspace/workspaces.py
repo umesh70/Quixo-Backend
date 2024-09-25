@@ -156,7 +156,7 @@ def add_member(workspace_id):
                 workspace_name = workspaceName,
                 user_id = user.id,
                 email = user.email,
-                userColor = 
+                # userColor = 
             )
 
             invite_link = f"{baseURL}/dashboard/{workspace_id}/{workspaceName}/boards"

@@ -53,3 +53,17 @@ def get_boards(workspace_id):
         board_list.append(board_data)
 
     return jsonify(board_list), 200
+
+@board_app.route('/get_board_gradients', methods = ['GET'])
+@jwt_required()
+def get_board_gradients():
+    gradients = BoardGradients.query.all()
+    gradient_list = []
+    for gradient in gradients:
+        gradient_data = {
+            'id' : gradient.id,
+            'gradient' : gradient.gradient
+        }
+        gradient_list.append(gradient_data)
+    
+    return jsonify(gradient_list), 200
