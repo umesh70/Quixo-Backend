@@ -54,7 +54,6 @@ def create_workspace():
 
 
 @Workspace_app.route('/get_user_workspaces/<int:user_id>', methods=['GET'])
-@Workspace_app.route('/get_user_workspaces/<int:user_id>', methods=['GET'])
 @jwt_required()
 def get_user_workspaces(user_id):
     # Query workspaces created by the user (where user is admin)
