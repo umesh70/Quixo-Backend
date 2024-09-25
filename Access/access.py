@@ -6,7 +6,7 @@ from DataBase.db_config import db, User,Token,WorkspaceToken,WorkspaceMember
 from flask import request, jsonify,Blueprint,session
 from flask_mail import Message
 import random
-from  Utilities.utilities import mail , jwt, generate_token,colorFunction
+from  Utilities.utilities import mail , jwt, generate_token,colorFunction,decode_token
 from redis import Redis
 from flask_jwt_extended import jwt_required,get_jwt_identity
 
@@ -24,10 +24,13 @@ def signup():
     username = data.get('username')
     password = data.get('password')
     email = data.get('email')
-    workspceName = data.get('workspace_name')
-    workspace_id = data.get('workspace_id')
-    emailToken = data.get('token')
-    user_id = data.get('user_id')
+    inviToken = data.get('token')
+    inviEmail =  decode_token(inviToken)
+
+    if inviEmail:
+        if inviEmail != email:
+            return jsonify({'message':'Please use the same email on which you received the invitation'})
+        
 
     if not username or not password or not email:
         return jsonify({'error': 'Username, password, and email are required'}), 400
@@ -44,17 +47,7 @@ def signup():
         'otp': otp
     }
     
-    if WorkspaceToken.query.filter(WorkspaceToken.email == email):
-        workspacemember  = WorkspaceMember(
-            workspace_id = workspace_id,
-            workspceName = workspceName,
-            user_id = user_id,
-            email = email,
-            status = "Member",
-            userColor = colorFunction()
-        )
-        db.session.add(workspacemember)
-        db.commit()
+
     msg = Message('Verification OTP', recipients=[email])
     msg.body = f'Your OTP for verification is: {otp}'
     
@@ -65,6 +58,7 @@ def signup():
 
 
 @auth_app.route('/signup_verification', methods=['POST'])
+@jwt_required(optional=True)
 def signup_verification():
     data = request.json
     otp = int(data.get('otp'))
@@ -86,9 +80,28 @@ def signup_verification():
         is_verified=True,
         otp=None  # Clear OTP after verification
     )
-    db.session.add(new_user)
-    db.session.commit()
+    user_id = new_user.id
+    email = new_user.email
+    workspceName = data.get('workspace_name')
+    workspace_id = data.get('workspace_id')
+    emailToken = data.get('token')
 
+    if (workspceName and workspace_id and emailToken):
+        if WorkspaceToken.query.filter(WorkspaceToken.email == email):
+            workspacemember  = WorkspaceMember(
+                workspace_id = workspace_id,
+                workspceName = workspceName,
+                user_id = user_id,
+                email = email,
+                status = "Member",
+                userColor = colorFunction()
+            )
+            db.session.add(workspacemember)
+        else:
+            return jsonify({'message':"invalid user"})
+    
+
+    db.session.add(new_user)
     session.pop('user_data', None)
 
     token = generate_token(new_user.id)
@@ -100,26 +113,57 @@ def signup_verification():
     db.session.commit()
     return jsonify({'success': 'Account created and verified successfully.', 'token': token, 'id':new_user.id, 'username': new_user.username, 'email': new_user.email}), 201
     
+
 @auth_app.route('/login', methods=['POST'])
 def login():
     data = request.json
     email = data.get('email')
     password = data.get('password')
+    inviToken = data.get('token')
+    inviEmail =  decode_token(inviToken)
+
+    if inviEmail:
+        if inviEmail != email:
+            return jsonify({'message':'Please use the same email on which you received the invitation'})
 
     user = User.query.filter_by(email=email).first()
 
+    
     if not user:
         return jsonify({'error': 'User does not exist, please sign up first'}), 404
 
     if user.password != password:
         return jsonify({'error': 'Invalid credentials'}), 401
     
+
     # redisClient.setex(f"userSession:{user.email}", 259200, session_data)
     token = generate_token(user.id)
     newToken = Token(
         token=token,
         email=email
     )
+    
+    user_id = user.id
+    email = user.email
+    workspceName = data.get('workspace_name')
+    workspace_id = data.get('workspace_id')
+    emailToken = data.get('token')
+    
+    if (workspceName and workspace_id and emailToken):
+        if WorkspaceToken.query.filter(WorkspaceToken.email == email):
+            workspacemember  = WorkspaceMember(
+                workspace_id = workspace_id,
+                workspceName = workspceName,
+                user_id = user_id,
+                email = email,
+                status = "Member",
+                userColor = colorFunction()
+            )
+            db.session.add(workspacemember)
+        else:
+            return jsonify({'message':"invalid user"})
+    
+    
     db.session.add(newToken)
     db.session.commit()
     print(token)
