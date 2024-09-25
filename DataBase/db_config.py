@@ -50,11 +50,12 @@ class WorkspaceMember(db.Model):
     __tablename__ = 'workspace_members'
 
     id = db.Column(db.Integer, primary_key=True)
-    workspace_id = db.Column(db.Integer, db.ForeignKey('workspaces.workspace_id'), nullable=False)
+    workspaceID = db.Column(db.Integer, db.ForeignKey('workspaces.workspace_id'), nullable=False)
     workspacName = db.Column(db.String(255), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    userID = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     email = db.Column(db.String(255), nullable=False)
     status = db.Column(db.String(255), nullable=False)
+    userColor = db.Column(db.String(255), nullable=False)
 
     # Relationship to the workspace this membership belongs to
     workspace = db.relationship('Workspace', back_populates='members')
@@ -83,7 +84,7 @@ class WorkspaceToken(db.Model):
     __tablename__ = "workspacetokens"
     id = db.Column(db.Integer, primary_key=True)
     token = db.Column(db.String(255), nullable=False)
-    
+    email = db.Column(db.String(120), unique=True, nullable=False)
     def __repr__(self):
         return f'<Token {self.token}>'
 

@@ -2,7 +2,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from DataBase.db_config import db, User,Token
+from DataBase.db_config import db, User,Token,WorkspaceToken,WorkspaceMember
 from flask import request, jsonify,Blueprint,session
 from flask_mail import Message
 import random
@@ -12,13 +12,23 @@ from flask_jwt_extended import jwt_required,get_jwt_identity
 
 auth_app = Blueprint('auth',__name__)
 redisClient = Redis()
+
 @auth_app.route('/signup', methods=['POST'])
 def signup():
+
     data = request.json
     username = data.get('username')
     password = data.get('password')
     email = data.get('email')
-    
+    emailToken = data.get('token')
+
+    if Token.query.filter(Token.email == email):
+        if WorkspaceToken.query.filer(WorkspaceToken.token == emailToken):
+            newmember = WorkspaceMember(
+                
+            )
+
+
     if not username or not password or not email:
         return jsonify({'error': 'Username, password, and email are required'}), 400
 

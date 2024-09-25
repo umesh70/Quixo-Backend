@@ -3,17 +3,18 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from flask import request, jsonify, Blueprint, url_for,redirect
-from DataBase.db_config import db, User, Workspace, WorkspaceMember
+from DataBase.db_config import db, User, Workspace, WorkspaceMember,WorkspaceToken
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask_jwt_extended import jwt_required
 from flask import request, jsonify
 import re
-from Utilities.utilities import generate_token, mail
+from Utilities.utilities import generate_token, mail, colorFunction
 from flask_mail import Message
 from sqlalchemy.exc import IntegrityError
-from Access.access import ActiveSession,signup,login
+from Access.access import ActiveSession
 import secrets
 from datetime import datetime
+import random
 
 Workspace_app = Blueprint('workspace_points', __name__)
 
@@ -33,17 +34,25 @@ def create_workspace():
         return jsonify({'error': 'Invalid user'}), 404
     new_workspace = Workspace(workspace_name=workspace_name,
                                admin_mail=admin_mail, admin_id=admin_id, description=description)
-    newUser= WorkspaceMember()
+
+    workmember = WorkspaceMember(
+                workspace_name = workspace_name,
+                user_id = user.id,
+                email = user.email,
+                userColor = colorFunction(),
+                status= "Admin"
+            )
     
+    db.session.add(workmember)
     db.session.add(new_workspace)
     db.session.commit()
+
     return jsonify({'message': f'Workspace {workspace_name} created successfully'}), 201
 
 
 
 
 
-@Workspace_app.route('/get_user_workspaces/<int:user_id>', methods=['GET'])
 @Workspace_app.route('/get_user_workspaces/<int:user_id>', methods=['GET'])
 @jwt_required()
 def get_user_workspaces(user_id):
@@ -157,36 +166,39 @@ def add_member(workspace_id):
             user exists and logged in 
             """
             workmember = WorkspaceMember(
-                workspace_id = workspace_id,
-                workspace_name = workspaceName,
-                user_id = user.id,
+                workspaceID = workspace_id,
+                workspaceName = workspaceName,
+                userID = user.id,
                 email = user.email,
-                # userColor = 
+                userColor = colorFunction(),
+                status= "Member"
             )
-
+            db.session.add(workmember)
+            db.session.commit()
             invite_link = f"{baseURL}/dashboard/{workspace_id}/{workspaceName}/boards"
+
         else:
             """
             user exists but not logged in
             http://localhost:3000/login?token=
             """
             invite_link = f"{baseURL}/login?token={invitation_token}"
+            inviteInfo = WorkspaceToken(
+                token=invitation_token,
+                email= user.email
+            )
+            db.session.add(inviteInfo)
         """
         http://localhost:3000/signup?token=
         """
     else:
             invite_link = f"{baseURL}/signup?token={invitation_token}"
-    
+            inviteInfo = WorkspaceToken(
+                token=invitation_token,
+                email= user.email
+            )
+            db.session.add(inviteInfo)
     print(invite_link)
-
-    # # Create an invitation record
-    # invitation = Invitation(
-    #     email=email,
-    #     workspace_id=workspace_id,
-    #     token=invitation_token,
-    #     expires_at=datetime.utcnow() + timedelta(days=7)  # Set expiration to 7 days from now
-    # )
-    # db.session.add(invitation)
 
     try:
         db.session.commit()
@@ -206,13 +218,6 @@ def add_member(workspace_id):
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
 
-# def send_invitation_email(email, invite_link, workspace_name):
-#     msg = Message(
-#         subject=f"Invitation to join {workspace_name} on Workspace App",
-#         recipients=[email],
-#         body=f"Hi,\n\nYou have been invited to join the workspace '{workspace_name}'.\n\nPlease use the following link to join:\n\n{invite_link}\n\nBest regards,\nWorkspace App Team"
-#     )
-#     mail.send(msg)
 
 
 
@@ -248,111 +253,4 @@ def add_member(workspace_id):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# def add_member(workspace_id):
-    
-#     currentUser = get_jwt_identity()
-#     workspace = Workspace.query.get_or_404(workspace_id)
-#     baselink = "http://localhost:5000"
-#     emailtoken = generate_token(email)
-
-#     """
-#     check if the current user is the admin 
-
-#     """
-#     if workspace.admin_id != currentUser:
-#         return jsonify({"error": "You don't have permission to invite members to this workspace"}), 403
-
-#     Data = request.json
-#     email = Data['email']
-#     # role = Data.get('role', 'member')
-
-    # if not email:
-    #     return jsonify({"error": "Email is required"}), 400
-    # if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
-    #     return jsonify({"error": "Invalid email format"}), 400
-    # # if role not in ['admin', 'member']:
-    #     # return jsonify({"error": "Invalid role. Must be 'admin' or 'member'"}), 400
-    
-#     """
-#     find the user in the database by email
-#     """
-    
-#     user = User.query.filter_by(email=email).first()
-#     """
-#     is user is logged in create a link which directly redirects the user to the workspace which the user is invited to.
-#     else, create a link first which redirects the user to signup.
-#     """
-#     if user:
-#         if ActiveSession(user.email):
-#             print(email)
-#         else:
-#             invitationLink = url_for('login',)
-#             print("user is not logged in")
-#     else:
-#         print("no user")
-#     # if not user:
-#     #     try:
-#     #         db.session.flush()
-#     #     except IntegrityError:
-#     #         db.session.rollback()
-#     #         return jsonify({"error": "User with this email already exists"}), 400
-    
-
-    
-#     existing_member = WorkspaceMember.query.filter_by(workspace_id=workspace_id, user_id=currentUser).first()
-#     if existing_member:
-#         return jsonify({"error": "User is already a member of this workspace"}), 400
-
-#     # new_member = WorkspaceMember(workspace_id=workspace_id, user_id=currentUser, email=email, role=role)
-#     # db.session.add(new_member)
-
-#     # try:
-#     #     db.session.commit()
-#     # except IntegrityError:
-#     #     db.session.rollback()
-#     #     return jsonify({"error": "Failed to add member to workspace"}), 500
-
-#     emailtoken = generate_token(email)
-#     UserID = generate_token(currentUser)
-#     # invitationlink = f"http://localhost:5000/invite?token={emailtoken}&UserId={UserID}"
-#     newToken = InviteTokens(token=emailtoken,adminID = currentUser,email=email)
-#     db.session.add(newToken)
-#     try:
-#         db.session.commit()
-#     except IntegrityError:
-#         db.session.rollback()
-#         return jsonify({"error": "Failed to add token"}), 500
-
-#     msg = Message(
-#         subject="You're Invited!",
-#         recipients=[email],
-#         body=f"Hello, you've been invited! Click the link to join: {invitationlink}"
-#     )
-
-#     mail.send(msg)
-#     return f"email sent successfully",200
 
