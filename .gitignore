@@ -6,3 +6,4 @@ env
 Sessions
 vrenv
 test.py
+__pycache__
