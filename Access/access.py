@@ -25,7 +25,9 @@ def signup():
     password = data.get('password')
     email = data.get('email')
     inviToken = data.get('token')
-    inviEmail =  decode_token(inviToken)
+    inviEmail = ''
+    if inviToken:
+        inviEmail =  decode_token(inviToken)
 
     if inviEmail:
         if inviEmail != email:
@@ -80,29 +82,14 @@ def signup_verification():
         is_verified=True,
         otp=None  # Clear OTP after verification
     )
-    user_id = new_user.id
+
     email = new_user.email
-    workspceName = data.get('workspace_name')
+    workspace_name = data.get('workspace_name')
     workspace_id = data.get('workspace_id')
-    emailToken = data.get('token')
-
-    if (workspceName and workspace_id and emailToken):
-        if WorkspaceToken.query.filter(WorkspaceToken.email == email):
-            workspacemember  = WorkspaceMember(
-                workspace_id = workspace_id,
-                workspceName = workspceName,
-                user_id = user_id,
-                email = email,
-                status = "Member",
-                userColor = colorFunction()
-            )
-            db.session.add(workspacemember)
-        else:
-            return jsonify({'message':"invalid user"})
+    email_token = data.get('token')
     
-
     db.session.add(new_user)
-    session.pop('user_data', None)
+    db.session.commit()
 
     token = generate_token(new_user.id)
     newToken = Token(
@@ -111,6 +98,22 @@ def signup_verification():
     )
     db.session.add(newToken)
     db.session.commit()
+
+    if (workspace_name and workspace_id and email_token):
+        if WorkspaceToken.query.filter(WorkspaceToken.email == email):
+            workspacemember  = WorkspaceMember(
+                workspace_id = workspace_id,
+                workspace_name = workspace_name,
+                user_id = new_user.id,
+                email = email,
+                status = "Member",
+                userColor = colorFunction()
+            )
+            db.session.add(workspacemember)
+        else:
+            return jsonify({'message':"invalid user"})
+        
+    session.pop('user_data', None)
     return jsonify({'success': 'Account created and verified successfully.', 'token': token, 'id':new_user.id, 'username': new_user.username, 'email': new_user.email}), 201
     
 
@@ -147,9 +150,9 @@ def login():
     email = user.email
     workspceName = data.get('workspace_name')
     workspace_id = data.get('workspace_id')
-    emailToken = data.get('token')
+    email_token = data.get('token')
     
-    if (workspceName and workspace_id and emailToken):
+    if (workspceName and workspace_id and email_token):
         if WorkspaceToken.query.filter(WorkspaceToken.email == email):
             workspacemember  = WorkspaceMember(
                 workspace_id = workspace_id,

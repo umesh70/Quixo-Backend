@@ -29,12 +29,15 @@ def create_workspace():
 
     admin_id = get_jwt_identity()
     user = User.query.filter_by(id=admin_id).first()
+    print(User.query.all()[0].id, admin_id)
 
     if not user:
         return jsonify({'error': 'Invalid user'}), 404
     new_workspace = Workspace(workspace_name=workspace_name,
                                admin_mail=admin_mail, admin_id=admin_id, description=description)
 
+    db.session.add(new_workspace)
+    db.session.commit()
     workmember = WorkspaceMember(
                 workspace_id = new_workspace.workspace_id,
                 workspace_name = workspace_name,
@@ -45,9 +48,7 @@ def create_workspace():
             )
     
     db.session.add(workmember)
-    db.session.add(new_workspace)
     db.session.commit()
-
     return jsonify({'message': f'Workspace {workspace_name} created successfully'}), 201
 
 
@@ -194,10 +195,10 @@ def add_member(workspace_id):
         http://localhost:3000/signup?token=
         """
     else:
-            invite_link = f"{baseURL}/signup?token={invitation_token}?workspace_id={workspace_id}?workspace_name={workspace_name}?user_id={user.id}"
+            invite_link = f"{baseURL}/signup?token={invitation_token}?workspace_id={workspace_id}?workspace_name={workspace_name}"
             inviteInfo = WorkspaceToken(
                 token=invitation_token,
-                email= user.email
+                email= email
             )
             db.session.add(inviteInfo)
     print(invite_link)
@@ -205,12 +206,11 @@ def add_member(workspace_id):
     try:
         db.session.commit()
         msg = Message()
-        msg = Message("Invitation to join {workspace.workspace_name} on Trello      workspace",
+        msg = Message(f'Invitation to join {workspace.workspace_name} workspace on Quixo',
         recipients=[email])
         msg.body = f"Hi,\n\nYou have been invited to join the workspace '{workspace_name}'.\n\nPlease use the following link to join:\n\n{invite_link}\n\nBest regards"
         mail.send(msg)
-        # Send invitation email
-        # send_invitation_email(email, invite_link, workspace.workspace_name)
+        
         return jsonify({
             "message": "Invitation sent successfully",
             "invite_link": invite_link
