@@ -67,3 +67,19 @@ def get_board_gradients():
         gradient_list.append(gradient_data)
     
     return jsonify(gradient_list), 200
+
+@board_app.route('/get_board_details/<int:id>', methods = ['GET'])
+@jwt_required()
+def get_board_details(id):
+    
+    board = Board.query.filter_by(id = id).first()
+    
+    if not board:
+        return jsonify({"error":f'Board with id {id} not found'}), 404
+    
+    return jsonify([{
+        'id' : board.id,
+        'name': board.name,
+        'description' : board.description,
+        'gradient' : board.gradient.gradient
+    }])

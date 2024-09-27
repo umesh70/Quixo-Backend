@@ -14,6 +14,7 @@ class User(db.Model):
     email = db.Column(db.String(30), unique=True, nullable=False)
     is_verified = db.Column(db.Boolean, default=False, nullable=False)
     otp = db.Column(db.Integer)
+    user_color = db.Column(db.String(255), nullable=False)
 
     # Relationship to the workspaces the user administers
     workspaces_administered = db.relationship('Workspace', back_populates='admin', cascade="all, delete-orphan")
@@ -51,11 +52,9 @@ class WorkspaceMember(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     workspace_id = db.Column(db.Integer, db.ForeignKey('workspaces.workspace_id'), nullable=False)
-    workspace_name = db.Column(db.String(255), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     email = db.Column(db.String(255), nullable=False)
     status = db.Column(db.String(255), nullable=False)
-    userColor = db.Column(db.String(255), nullable=False)
 
     # Relationship to the workspace this membership belongs to
     workspace = db.relationship('Workspace', back_populates='members')
@@ -84,7 +83,13 @@ class WorkspaceToken(db.Model):
     __tablename__ = "workspacetokens"
     id = db.Column(db.Integer, primary_key=True)
     token = db.Column(db.String(255), nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
+    email = db.Column(db.String(120), nullable=False)
+    workspace_id = db.Column(db.Integer, db.ForeignKey('workspaces.workspace_id'), nullable = False)
+
+    __table_args__ = (
+        db.UniqueConstraint('email', 'workspace_id', name='uq_workspace_invite_token'),
+    )
+
     def __repr__(self):
         return f'<Token {self.token}>'
 

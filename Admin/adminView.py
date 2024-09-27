@@ -9,7 +9,7 @@ class WorkspaceView(ModelView):
 
 
 class MemberView(ModelView):
-    column_list = ('workspace_id','user_id','email','role','invited_at','joined_at')
+    column_list = ('workspace_id','user_id','email','status')
 
 class TokenView(ModelView):
     column_list = ('token','email')
