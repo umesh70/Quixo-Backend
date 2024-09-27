@@ -171,7 +171,7 @@ def add_member(workspace_id):
             invite_link = f"{base_url}/dashboard/{workspace_id}/{workspace_name.replace(' ', '')}/boards"
 
         else:
-            invite_link = f"{base_url}/login?token={invitation_token}?email={email}?workspace_id={workspace_id}"
+            invite_link = f"{base_url}/login?token={invitation_token}&email={email}&workspace_id={workspace_id}"
             inivite_info = WorkspaceToken(
                 token = invitation_token,
                 email = email,
@@ -180,7 +180,7 @@ def add_member(workspace_id):
             db.session.add(inivite_info)
         
     else:
-            invite_link = f"{base_url}/signup?token={invitation_token}?email={email}?workspace_id={workspace_id}"
+            invite_link = f"{base_url}/signup?token={invitation_token}&email={email}&workspace_id={workspace_id}"
             inivite_info = WorkspaceToken(
                 token=invitation_token,
                 email= email,
