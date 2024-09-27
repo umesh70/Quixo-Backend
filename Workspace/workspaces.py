@@ -8,13 +8,9 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask_jwt_extended import jwt_required
 from flask import request, jsonify
 import re
-from Utilities.utilities import generate_token, mail, colorFunction
+from Utilities.utilities import generate_token, mail, ActiveSession
 from flask_mail import Message
-from sqlalchemy.exc import IntegrityError
-from Access.access import ActiveSession
-import secrets
-from datetime import datetime
-import random
+
 
 Workspace_app = Blueprint('workspace_points', __name__)
 
@@ -39,20 +35,15 @@ def create_workspace():
     db.session.add(new_workspace)
     db.session.commit()
     workmember = WorkspaceMember(
-                workspace_id = new_workspace.workspace_id,
-                workspace_name = workspace_name,
+                workspace_id = new_workspace.workspace_id,     
                 user_id = user.id,
                 email = user.email,
-                userColor = colorFunction(),
                 status= "Admin"
             )
     
     db.session.add(workmember)
     db.session.commit()
     return jsonify({'message': f'Workspace {workspace_name} created successfully'}), 201
-
-
-
 
 
 @Workspace_app.route('/get_user_workspaces/<int:user_id>', methods=['GET'])
@@ -135,15 +126,15 @@ Endpoint for sending an invite via email(Send invite link to their email)
 @jwt_required()
 def add_member(workspace_id):
 
-    baseURL = "http://localhost:3000"
-    current_user = get_jwt_identity()
-    print(current_user)
-    workspace = Workspace.query.get_or_404(workspace_id)
-   
+    base_url = os.getenv('invitation_base_url')
+    current_user_id = get_jwt_identity()
+
+    workspace = Workspace.query.get_or_404(workspace_id)   
     workspace_name = workspace.workspace_name
+
     # Check if the current user is the admin
-    if workspace.admin_id != current_user:
-        return jsonify({"error": "You don't have permission to invite members to this workspace"}), 403
+    if workspace.admin_id != current_user_id:
+        return jsonify({"error": "Only admins have permission to invite members to a workspace"}), 403
     
     data = request.json
     email = data.get('email')
@@ -153,68 +144,64 @@ def add_member(workspace_id):
     if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
         return jsonify({"error": "Invalid email format"}), 400
  
-    user = User.query.filter_by(email=email).first()
+    user = User.query.filter_by(email = email).first()
 
     # Check if the user is already a member of the workspace
     existing_member = WorkspaceMember.query.filter_by(workspace_id=workspace_id, email=email).first()
     if existing_member:
         return jsonify({"error": "User is already a member of this workspace"}), 400
 
+    #Check whether a link to the asked workspace, email was sent earlier too
+    if WorkspaceToken.query.filter_by(email = email, workspace_id = workspace_id).first():
+        return jsonify({"error": f"Invitation link was already sent for {workspace_name} workspace to {email} email"}), 400
+    
     # Generate a unique invitation token
-    invitation_token = generate_token(email)
+    invitation_token = generate_token(email + workspace_id)
 
     if user:
         if ActiveSession(user.email):
-            """
-            user exists and logged in 
-            """
             workmember = WorkspaceMember(
                 workspace_id = workspace_id,
-                workspace_name = workspace_name,
                 user_id = user.id,
                 email = user.email,
-                userColor = colorFunction(),
                 status= "Member"
             )
             db.session.add(workmember)
             db.session.commit()
-            invite_link = f"{baseURL}/dashboard/{workspace_id}/{workspace_name}/boards"
+            invite_link = f"{base_url}/dashboard/{workspace_id}/{workspace_name.replace(' ', '')}/boards"
 
         else:
-            """
-            user exists but not logged in
-            http://localhost:3000/login?token=
-            """
-            invite_link = f"{baseURL}/login?token={invitation_token}?workspace_id={workspace_id}?workspace_name={workspace_name}?user_id={user.id}"
-            inviteInfo = WorkspaceToken(
-                token=invitation_token,
-                email= user.email
+            invite_link = f"{base_url}/login?token={invitation_token}?email={email}?workspace_id={workspace_id}"
+            inivite_info = WorkspaceToken(
+                token = invitation_token,
+                email = email,
+                workspace_id = workspace_id
             )
-            db.session.add(inviteInfo)
-        """
-        http://localhost:3000/signup?token=
-        """
+            db.session.add(inivite_info)
+        
     else:
-            invite_link = f"{baseURL}/signup?token={invitation_token}?workspace_id={workspace_id}?workspace_name={workspace_name}"
-            inviteInfo = WorkspaceToken(
+            invite_link = f"{base_url}/signup?token={invitation_token}?email={email}?workspace_id={workspace_id}"
+            inivite_info = WorkspaceToken(
                 token=invitation_token,
-                email= email
+                email= email,
+                workspace_id = workspace_id
             )
-            db.session.add(inviteInfo)
+            db.session.add(inivite_info)
     print(invite_link)
 
     try:
         db.session.commit()
         msg = Message()
-        msg = Message(f'Invitation to join {workspace.workspace_name} workspace on Quixo',
+        msg = Message(f'Invitation to join {workspace_name} workspace on Quixo',
         recipients=[email])
-        msg.body = f"Hi,\n\nYou have been invited to join the workspace '{workspace_name}'.\n\nPlease use the following link to join:\n\n{invite_link}\n\nBest regards"
+        msg.body = f"Hi,\n\nYou have been invited to join the workspace '{workspace_name}' on Quixo.\n\nPlease use the following link to join:\n\n{invite_link}\n\nBest regards"
         mail.send(msg)
         
         return jsonify({
             "message": "Invitation sent successfully",
             "invite_link": invite_link
         }), 201
+    
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500

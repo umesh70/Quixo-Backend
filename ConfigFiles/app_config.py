@@ -18,14 +18,14 @@ load_dotenv()
 
 CORS(app, origins=['http://localhost:3000'], supports_credentials=True)
 
-app.config['SECRET_KEY'] = os.getenv('appsecretkey')
+app.config['SECRET_KEY'] = os.getenv('app_secret_key')
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = os.getenv('email')
-app.config['MAIL_PASSWORD'] = os.getenv('emailPassword')
-app.config['MAIL_DEFAULT_SENDER'] = os.getenv('mailsender')
+app.config['MAIL_PASSWORD'] = os.getenv('email_password')
+app.config['MAIL_DEFAULT_SENDER'] = os.getenv('mail_sender')
 app.config['SESSION_COOKIE_SECURE'] = True  # For HTTPS
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_FILE_DIR'] = 'Sessions'

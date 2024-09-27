@@ -3,4 +3,3 @@ SQLAlchemy
 Flask-JWT-Extended
 Flask-Admin
 Flask-Mail
-redis

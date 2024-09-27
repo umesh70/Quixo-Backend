@@ -4,6 +4,8 @@ from flask_jwt_extended import create_access_token
 from datetime import timedelta
 import random
 from flask_jwt_extended import decode_token
+from DataBase.db_config import Token 
+
 #Mail utility
 mail = Mail()
 
@@ -29,16 +31,15 @@ def generate_token(data):
 def decode_token_function(token):
     decoded_token = decode_token(token)
     return decoded_token
-# def generateToken(data):
-#     expires = timedelta(days=1)
-#     additional_claims = {'sub': data}
-#     token = create_access_token(
-#             identity=data, expires_delta=expires, additional_claims=additional_claims)
-#     return token
 
+def color_function():
+    color_list = ['A1D6B2','8EACCD','D2E0FB','FF8A8A','73BBA3','FFBF78','FFD18E','6C946F','FCDC94']
+    return random.choice(color_list)
 
-def colorFunction():
-    colorList = ['A1D6B2','8EACCD','D2E0FB','FF8A8A','73BBA3','FFBF78','FFD18E','6C946F','FCDC94']
-    return random.choice(colorList)
+def ActiveSession(email):
+    token_present = Token.query.filter(Token.email == email).first()
+    if token_present:
+        return True
+    return False
 
 
