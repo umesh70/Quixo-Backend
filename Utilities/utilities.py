@@ -33,7 +33,7 @@ def decode_token_function(token):
     return decoded_token
 
 def color_function():
-    color_list = ['A1D6B2','8EACCD','D2E0FB','FF8A8A','73BBA3','FFBF78','FFD18E','6C946F','FCDC94']
+    color_list = ['bg-[#d00000]','bg-[#7b2cbf]','bg-[#52b788]','bg-[#fdb833]','bg-[#00b4d8]','bg-[#ff758f]']
     return random.choice(color_list)
 
 def ActiveSession(email):
