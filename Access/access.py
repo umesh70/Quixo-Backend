@@ -11,10 +11,6 @@ from flask_jwt_extended import jwt_required,get_jwt_identity
 
 auth_app = Blueprint('auth',__name__)
 
-
-"""
-    agar user ke liye signup wala link generate hua hai to uske against sirf invitation token hona chhayiye,agar or koi token hai 
-"""
 @auth_app.route('/signup', methods=['POST'])
 def signup():
 

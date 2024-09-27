@@ -8,8 +8,9 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask_jwt_extended import jwt_required
 from flask import request, jsonify
 import re
-from Utilities.utilities import generate_token, mail, ActiveSession
+from Utilities.utilities import generate_token, mail, active_session
 from flask_mail import Message
+import random
 
 
 Workspace_app = Blueprint('workspace_points', __name__)
@@ -25,15 +26,21 @@ def create_workspace():
 
     admin_id = get_jwt_identity()
     user = User.query.filter_by(id=admin_id).first()
+    
     print(User.query.all()[0].id, admin_id)
-
+    
+    if (user.id != admin_id) and (user.email != admin_mail):
+        return jsonify({'error':'Please enter correct email'}),422
+    
     if not user:
         return jsonify({'error': 'Invalid user'}), 404
+    
     new_workspace = Workspace(workspace_name=workspace_name,
                                admin_mail=admin_mail, admin_id=admin_id, description=description)
 
     db.session.add(new_workspace)
     db.session.commit()
+
     workmember = WorkspaceMember(
                 workspace_id = new_workspace.workspace_id,     
                 user_id = user.id,
@@ -159,7 +166,7 @@ def add_member(workspace_id):
     invitation_token = generate_token(email + workspace_id)
 
     if user:
-        if ActiveSession(user.email):
+        if active_session(user.email):
             workmember = WorkspaceMember(
                 workspace_id = workspace_id,
                 user_id = user.id,
@@ -206,38 +213,79 @@ def add_member(workspace_id):
         db.session.rollback()
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
+"""
+CASES
+
+1. the user who wants to leave the workspade is a normal user
+2. the admin wants to leave the workspace
+    2.1 check if there are any other admin
+        2.1.1 if yes remove the admin 
+        2.1.2 if not check if there are other members in the workspace except the admin who is trying to leave 
+        2.1.3 if not delete the workspace 
+        2.1.4 if yes, assign anyother person randomly the admin
+"""
 
 
+@Workspace_app.route('/leave_workspace/<workspace_id>',methods=['POST'])
+@jwt_required()
+def leave_workspace(workspace_id):
+    curr_user = get_jwt_identity()
+    print(f"Current user: {curr_user}")
 
+    # Check if the current user is a member of the workspace
+    is_member = WorkspaceMember.query.filter_by(
+        user_id=curr_user,
+        workspace_id=workspace_id
+    ).first()
 
+    if not is_member:
+        return jsonify({'message': 'User is not a member of this workspace'}), 404
 
+    if is_member.status == 'Admin':
+        # Case 2: Admin wants to leave the workspace
+        other_admins = WorkspaceMember.query.filter_by(
+            workspace_id=workspace_id,
+            status='Admin'
+        ).all()
+        
+        if len(other_admins) > 1:
+            # Case 2.1.1: There are other admins
+            db.session.delete(is_member)
+            db.session.commit()
+            return jsonify({'message': 'Admin has left the workspace successfully'}), 200
+        
+        # Case 2.1.2: Check if there are other members except the admin
+        other_members = WorkspaceMember.query.filter(
+            WorkspaceMember.workspace_id == workspace_id,
+            WorkspaceMember.user_id != is_member.user_id
+        ).all()
 
+        if not other_members:
+            # Case 2.1.3: No other members, delete the workspace
+            workspace_member = WorkspaceMember.query.filter_by(workspace_id=workspace_id).first()
+            db.session.delete(workspace_member)
+            Workspace_to_del = Workspace.query.filter_by(workspace_id=workspace_id).first()
+            db.session.delete(is_member)
+            db.session.delete(Workspace_to_del)
+            db.session.commit()
+            return jsonify({'message': 'Admin has left and Workspace has been deleted as there were no other members'}), 200
+        
+        # Case 2.1.4: Assign another person as admin
+        new_admin = random.choice(other_members)
+        new_admin.status = 'Admin'
+        db.session.delete(is_member)
+        db.session.commit()
+        return jsonify({'message': 'Admin has left the workspace. A new admin has been assigned.'}), 200
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    else:
+        # Case 1: Normal user wants to leave the workspace
+        try:
+            db.session.delete(is_member)
+            db.session.commit()
+            return jsonify({'message': 'User has left the workspace successfully'}), 200
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'message': 'An error occurred while leaving the workspace', 'error': str(e)}), 500
 
 
 
