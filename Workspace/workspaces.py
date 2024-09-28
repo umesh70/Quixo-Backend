@@ -226,7 +226,8 @@ def get_members(workspace_id):
                 "name" : member.user.username,
                 "user_color" : member.user.user_color,
                 "email" : member.email,
-                "status" : member.status 
+                "status" : member.status,
+                "admin_id" : member.workspace.admin_id
             }
             members_list.append(data)
 
