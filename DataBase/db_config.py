@@ -1,5 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
-from Admin.adminView import UserView, WorkspaceView, MemberView, TokenView, BoardView, GradientView
+from Admin.adminView import UserView, WorkspaceView, MemberView, TokenView, BoardView, GradientView, WorkspaceTokenView
 from flask_admin import Admin
 from datetime import datetime
 
@@ -136,6 +136,7 @@ def init_db(app):
     admin.add_view(TokenView(Token, db.session))
     admin.add_view(BoardView(Board, db.session))
     admin.add_view(GradientView(BoardGradients, db.session))
+    admin.add_view(WorkspaceTokenView(WorkspaceToken,db.session))
 
     with app.app_context():
         db.create_all()

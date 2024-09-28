@@ -36,10 +36,9 @@ def color_function():
     color_list = ['#d00000','#7b2cbf','#52b788','#fdb833','#00b4d8','#ff758f']
     return random.choice(color_list)
 
-def ActiveSession(email):
+def active_session(email):
     token_present = Token.query.filter(Token.email == email).first()
     if token_present:
         return True
     return False
-
 
