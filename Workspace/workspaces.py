@@ -207,6 +207,37 @@ def add_member(workspace_id):
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
 
+@Workspace_app.route('/get_members/<workspace_id>', methods = ['GET'])
+@jwt_required()
+def get_members(workspace_id):
+    try:
+        if not workspace_id:
+            return jsonify({'error': 'workspace_id is required'}), 400
+        
+        workspace = Workspace.query.get_or_404(workspace_id)
+
+        workspace_members = workspace.members
+        members_list = []
+
+        for member in workspace_members:
+            data = {
+                "id" : member.id,
+                "user_id" : member.user_id,
+                "name" : member.user.username,
+                "user_color" : member.user.user_color,
+                "email" : member.email,
+                "status" : member.status 
+            }
+            members_list.append(data)
+
+        return jsonify(members_list)
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+
+
 
 
 
