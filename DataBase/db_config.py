@@ -2,6 +2,7 @@ from flask_sqlalchemy import SQLAlchemy
 from Admin.adminView import UserView, WorkspaceView, MemberView, TokenView, BoardView, GradientView, WorkspaceTokenView
 from flask_admin import Admin
 from datetime import datetime
+from flask_migrate import Migrate
 
 db = SQLAlchemy()
 
@@ -129,6 +130,8 @@ def init_db(app):
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     db.init_app(app)
+    migrate = Migrate(app,db)
+    
     admin = Admin(app, name='Admin panel', template_mode='bootstrap3')
     admin.add_view(UserView(User,db.session))
     admin.add_view(WorkspaceView(Workspace,db.session))

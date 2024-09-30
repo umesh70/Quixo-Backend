@@ -13,6 +13,7 @@ from Workspace.workspaces import Workspace_app
 from Board.boards import board_app
 from dotenv import load_dotenv
 
+
 app = Flask(__name__)
 load_dotenv()
 
