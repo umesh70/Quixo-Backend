@@ -321,4 +321,44 @@ def leave_workspace(workspace_id):
 
 
 
+@Workspace_app.route('remove_member/<workspace_id>',methods=['POST'])
+@jwt_required()
+def remove_member(workspace_id):
+    currUser = get_jwt_identity()
 
+    """
+    check if the workspace exists or not
+    """
+    workspace_exists = Workspace.query.filter(Workspace.workspace_id == workspace_id).first()
+    if not workspace_exists:
+        return jsonify({'message':'workspace does not exists'}),400    
+    
+    
+    """
+    check if the current user is the admin
+    """
+    is_admin = Workspace.query.filter(Workspace.admin_id==currUser,Workspace.workspace_id == workspace_id).first()
+    
+   
+    if not is_admin:
+        return jsonify({'message':'Action can be performed only be Admin'}), 403
+        
+    
+    data = request.json
+    email = data['email']
+
+    to_remove = WorkspaceMember.query.filter(WorkspaceMember.email == email,WorkspaceMember.workspace_id == workspace_id).first()
+
+    if not to_remove:
+        return jsonify({'message':'This user is not a member of this workspace'}),400
+       
+    if to_remove.user_id == is_admin.admin_id:
+            return jsonify({'message':'Admin cannot remove himself'}), 405 
+
+    db.session.delete(to_remove)
+    db.session.commit()
+
+    return jsonify({'success':'member removed successfully'}),200
+
+
+    
