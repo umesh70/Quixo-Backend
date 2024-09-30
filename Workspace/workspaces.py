@@ -234,11 +234,10 @@ def get_members(workspace_id):
                 "user_color" : member.user.user_color,
                 "email" : member.email,
                 "status" : member.status,
-                "admin_id" : member.workspace.admin_id
             }
             members_list.append(data)
 
-        return jsonify(members_list)
+        return jsonify({"members_lists":members_list, "admin_id" : workspace.admin_id}), 200
     
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -261,6 +260,9 @@ CASES
 @Workspace_app.route('/leave_workspace/<workspace_id>',methods=['POST'])
 @jwt_required()
 def leave_workspace(workspace_id):
+    data = request.json
+    new_admin_id = data['new_admin_id']
+
     curr_user = get_jwt_identity()
     print(f"Current user: {curr_user}")
 
@@ -274,19 +276,7 @@ def leave_workspace(workspace_id):
         return jsonify({'message': 'User is not a member of this workspace'}), 404
 
     if is_member.status == 'Admin':
-        # Case 2: Admin wants to leave the workspace
-        other_admins = WorkspaceMember.query.filter_by(
-            workspace_id=workspace_id,
-            status='Admin'
-        ).all()
-        
-        if len(other_admins) > 1:
-            # Case 2.1.1: There are other admins
-            db.session.delete(is_member)
-            db.session.commit()
-            return jsonify({'message': 'Admin has left the workspace successfully'}), 200
-        
-        # Case 2.1.2: Check if there are other members except the admin
+
         other_members = WorkspaceMember.query.filter(
             WorkspaceMember.workspace_id == workspace_id,
             WorkspaceMember.user_id != is_member.user_id
@@ -303,8 +293,17 @@ def leave_workspace(workspace_id):
             return jsonify({'message': 'Admin has left and Workspace has been deleted as there were no other members'}), 200
         
         # Case 2.1.4: Assign another person as admin
-        new_admin = random.choice(other_members)
+        if not new_admin_id:
+            return jsonify({"error":"Please send the id of new admin"}), 400
+        
+        new_admin = WorkspaceMember.query.filter(WorkspaceMember.user_id == new_admin_id, WorkspaceMember.workspace_id == workspace_id).first()
+
+        if not new_admin:
+            return jsonify({"error" : "This user is not a member of workspace"}), 404
+        
         new_admin.status = 'Admin'
+        new_admin.workspace.admin_id = new_admin_id
+        new_admin.workspace.admin_mail = new_admin.email
         db.session.delete(is_member)
         db.session.commit()
         return jsonify({'message': 'Admin has left the workspace. A new admin has been assigned.'}), 200
