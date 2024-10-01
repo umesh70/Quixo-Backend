@@ -257,63 +257,71 @@ CASES
 """
 
 
-@Workspace_app.route('/leave_workspace/<workspace_id>',methods=['POST'])
+@Workspace_app.route('/leave_workspace/<workspace_id>', methods=['POST'])
 @jwt_required()
 def leave_workspace(workspace_id):
     data = request.json
     new_admin_id = data['new_admin_id']
 
-    curr_user = get_jwt_identity()
-    print(f"Current user: {curr_user}")
+    curr_user_id = get_jwt_identity()
+
+    # Check whether the workspace exists or not
+
+    workspace = Workspace.query.filter(Workspace.workspace_id == workspace_id).first()
+    
+    if not workspace:
+        return jsonify({'error' : 'Workspace does not exists'}), 400
 
     # Check if the current user is a member of the workspace
-    is_member = WorkspaceMember.query.filter_by(
-        user_id=curr_user,
-        workspace_id=workspace_id
+
+    leaving_member = WorkspaceMember.query.filter(
+        WorkspaceMember.user_id == curr_user_id,
+        WorkspaceMember.workspace_id == workspace_id
     ).first()
 
-    if not is_member:
-        return jsonify({'message': 'User is not a member of this workspace'}), 404
+    if not leaving_member:
+        return jsonify({'error': 'You are not a member of this workspace'}), 404
 
-    if is_member.status == 'Admin':
+    if leaving_member.status == 'Admin':
 
-        other_members = WorkspaceMember.query.filter(
-            WorkspaceMember.workspace_id == workspace_id,
-            WorkspaceMember.user_id != is_member.user_id
-        ).all()
+        total_members = len(list(workspace.members))
 
-        if not other_members:
+        if total_members == 1:
             # Case 2.1.3: No other members, delete the workspace
-            workspace_member = WorkspaceMember.query.filter_by(workspace_id=workspace_id).first()
-            db.session.delete(workspace_member)
-            Workspace_to_del = Workspace.query.filter_by(workspace_id=workspace_id).first()
-            db.session.delete(is_member)
-            db.session.delete(Workspace_to_del)
+            db.session.delete(leaving_member)
+            db.session.delete(workspace)
             db.session.commit()
-            return jsonify({'message': 'Admin has left and Workspace has been deleted as there were no other members'}), 200
+            return jsonify({'message' : 'You have left the workspace and the workspace was deleted successfully'}), 200
         
         # Case 2.1.4: Assign another person as admin
         if not new_admin_id:
-            return jsonify({"error":"Please send the id of new admin"}), 400
+            return jsonify({"error" : "Please send the id of new admin"}), 400
         
-        new_admin = WorkspaceMember.query.filter(WorkspaceMember.user_id == new_admin_id, WorkspaceMember.workspace_id == workspace_id).first()
+        new_admin = WorkspaceMember.query.filter(WorkspaceMember.workspace_id == workspace_id, WorkspaceMember.user_id == new_admin_id).first()
 
+        if new_admin_id == curr_user_id:
+            return jsonify({"error" : "In order to leave the workspace make some other member as admin"}), 406
+        
         if not new_admin:
-            return jsonify({"error" : "This user is not a member of workspace"}), 404
+            return jsonify({"error" : f"User with id {new_admin_id} is not a member of workspace {workspace.workspace_name}"}), 404
+        
         
         new_admin.status = 'Admin'
         new_admin.workspace.admin_id = new_admin_id
         new_admin.workspace.admin_mail = new_admin.email
-        db.session.delete(is_member)
+        db.session.delete(leaving_member)
         db.session.commit()
-        return jsonify({'message': 'Admin has left the workspace. A new admin has been assigned.'}), 200
+
+        return jsonify({'message': f'You have left the workspace and user with id {new_admin_id} is now new admin'}), 200
 
     else:
         # Case 1: Normal user wants to leave the workspace
         try:
-            db.session.delete(is_member)
+            db.session.delete(leaving_member)
             db.session.commit()
-            return jsonify({'message': 'User has left the workspace successfully'}), 200
+
+            return jsonify({'message': 'You have left the workspace successfully'}), 200
+        
         except Exception as e:
             db.session.rollback()
             return jsonify({'message': 'An error occurred while leaving the workspace', 'error': str(e)}), 500
@@ -324,41 +332,35 @@ def leave_workspace(workspace_id):
 @Workspace_app.route('remove_member/<workspace_id>',methods=['POST'])
 @jwt_required()
 def remove_member(workspace_id):
-    currUser = get_jwt_identity()
+    data = request.json
+    user_id = data['user_id']
+    curr_user_id = get_jwt_identity()
 
-    """
-    check if the workspace exists or not
-    """
-    workspace_exists = Workspace.query.filter(Workspace.workspace_id == workspace_id).first()
-    if not workspace_exists:
-        return jsonify({'message':'workspace does not exists'}),400    
-    
-    
-    """
-    check if the current user is the admin
-    """
-    is_admin = Workspace.query.filter(Workspace.admin_id==currUser,Workspace.workspace_id == workspace_id).first()
-    
+    # check if the workspace exists or not
+
+    workspace = Workspace.query.filter(Workspace.workspace_id == workspace_id).first()
+    if not workspace:
+        return jsonify({'error' : 'Workspace does not exists'}), 400    
+     
+    # check if the current user is the admin
+
+    is_admin = workspace.admin_id == curr_user_id
    
     if not is_admin:
-        return jsonify({'message':'Action can be performed only be Admin'}), 403
+        return jsonify({'error' : 'Workspace members can only be removed by admin'}), 403
         
-    
-    data = request.json
-    email = data['email']
-
-    to_remove = WorkspaceMember.query.filter(WorkspaceMember.email == email,WorkspaceMember.workspace_id == workspace_id).first()
+    to_remove = WorkspaceMember.query.filter(WorkspaceMember.user_id == user_id, WorkspaceMember.workspace_id == workspace_id).first()
 
     if not to_remove:
-        return jsonify({'message':'This user is not a member of this workspace'}),400
+        return jsonify({'error' : f'No user with user id {user_id} exists for workspace {workspace.workspace_name}'}), 400
        
-    if to_remove.user_id == is_admin.admin_id:
-            return jsonify({'message':'Admin cannot remove himself'}), 405 
+    if user_id == workspace.admin_id:
+            return jsonify({'error':'Admins cannot remove themselves'}), 405 
 
     db.session.delete(to_remove)
     db.session.commit()
 
-    return jsonify({'success':'member removed successfully'}),200
+    return jsonify({'message':'Member removed successfully'}),200
 
 
     
