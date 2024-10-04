@@ -4,7 +4,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from flask import Blueprint, request, jsonify
 from DataBase.db_config import db, Board, Workspace, BoardGradients
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, get_jwt_identity
 
 board_app = Blueprint('boards', __name__)
 
@@ -83,3 +83,22 @@ def get_board_details(id):
         'description' : board.description,
         'gradient' : board.gradient.gradient
     }])
+
+
+
+@board_app.route('/delete_board<int:id>',methods=['POST'])
+@jwt_required()
+def delete_board(id):
+    # curr_user = get_jwt_identity()
+    board = Board.query.filter_by(id = id).first()
+    
+    if not board:
+        return jsonify({"error":f'Board with id {id} not found'}), 404
+
+    db.session.delete(board)
+    db.session.commit()
+    Workspace_id = board.workspace_id
+    return jsonify({'success':f'Board has been deleted from workspace {Workspace_id}'}),200
+
+
+    
