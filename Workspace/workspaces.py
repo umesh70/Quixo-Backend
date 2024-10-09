@@ -313,7 +313,7 @@ def leave_workspace(workspace_id):
         db.session.delete(leaving_member)
         db.session.commit()
 
-        return jsonify({'message': f'You have left the workspace and user with id {new_admin_id} is now new admin'}), 200
+        return jsonify({'message': f'You have left the workspace and member {new_admin.user.username} is now new admin'}), 200
 
     else:
         # Case 1: Normal user wants to leave the workspace
