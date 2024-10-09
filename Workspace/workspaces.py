@@ -53,9 +53,10 @@ def create_workspace():
     return jsonify({'message': f'Workspace {workspace_name} created successfully'}), 201
 
 
-@Workspace_app.route('/get_user_workspaces/<int:user_id>', methods=['GET'])
+@Workspace_app.route('/get_user_workspaces', methods=['GET'])
 @jwt_required()
-def get_user_workspaces(user_id):
+def get_user_workspaces():
+    user_id = get_jwt_identity()
     # Query workspaces created by the user (where user is admin)
     created_workspaces = Workspace.query.filter_by(admin_id=user_id).all()
     print(created_workspaces)
