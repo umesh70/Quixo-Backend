@@ -7,6 +7,7 @@ from DataBase.db_config import db, Board, Workspace, BoardGradients
 from flask_jwt_extended import jwt_required
 
 board_app = Blueprint('boards', __name__)
+# /home/mansi/Quixo-Backend/vrenv/bin
 
 @board_app.route('/create_board', methods = ['POST'])
 @jwt_required()
@@ -83,3 +84,26 @@ def get_board_details(id):
         'description' : board.description,
         'gradient' : board.gradient.gradient
     }])
+
+@board_app.route('/edit_board_details/<int:board_id>', methods = ['PATCH'])
+@jwt_required()
+def edit_board_details(board_id):
+    data = request.json
+    name = data['name']
+    description = data['description']
+
+    board = Board.query.filter_by(id = board_id)
+    print(board_id, name, description)
+
+    if not board:
+        return jsonify({'error' : 'Board not found'}), 404
+
+    if not name or not description:
+        return jsonify({'error' : 'Name and description are required'}), 400
+    
+    board.name = name
+    board.description = description
+
+    db.session.commit()
+
+    return jsonify({'message' : 'Board details updated successfully'}), 200
