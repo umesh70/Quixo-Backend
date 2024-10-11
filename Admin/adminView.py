@@ -22,3 +22,6 @@ class GradientView(ModelView):
 
 class WorkspaceTokenView(ModelView):
     column_list = ('token','email')
+
+class ListView(ModelView):
+    column_list = ('id', 'name', 'board_id')

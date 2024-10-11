@@ -3,7 +3,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from flask import Blueprint, request, jsonify
-from DataBase.db_config import db, Board, Workspace, BoardGradients
+from DataBase.db_config import db, Board, Workspace, BoardGradients, Lists
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 board_app = Blueprint('boards', __name__)
@@ -92,7 +92,7 @@ def edit_board_details(board_id):
     name = data['name']
     description = data['description']
 
-    board = Board.query.filter_by(id = board_id)
+    board = Board.query.filter_by(id = board_id).first()
     print(board_id, name, description)
 
     if not board:
@@ -109,12 +109,10 @@ def edit_board_details(board_id):
     return jsonify({'message' : 'Board details updated successfully'}), 200
 
 
-
-
-@board_app.route('/delete_board<int:id>',methods=['POST'])
+@board_app.route('/delete_board/<int:id>', methods=['DELETE'])
 @jwt_required()
 def delete_board(id):
-    # curr_user = get_jwt_identity()
+
     board = Board.query.filter_by(id = id).first()
     
     if not board:
@@ -122,8 +120,40 @@ def delete_board(id):
 
     db.session.delete(board)
     db.session.commit()
-    Workspace_id = board.workspace_id
-    return jsonify({'success':f'Board has been deleted from workspace {Workspace_id}'}),200
-
-
     
+    return jsonify({'success':f'Board deleted successfully'}),200
+
+@board_app.route('/add_list/<int:id>', methods = ['POST'])
+@jwt_required()
+def add_list(id):
+
+    data = request.json
+    name = data['name']
+
+    board = Board.query.filter_by(id = id).first()
+
+    if not board:
+        return jsonify({'error' : 'Board not found'}), 404
+    
+    if not name:
+        return jsonify({'error' : 'Name is required'}), 400
+    
+    new_list = Lists(name = name, board_id = id, board = board)
+    db.session.add(new_list)
+    db.session.commit()
+
+    return jsonify({'message' : 'List added successfully'}), 201
+
+@board_app.route('/get_lists/<int:id>', methods = ['GET'])
+@jwt_required()
+def get_lists(id):
+
+    board = Board.query.filter_by(id = id).first()
+
+    if not board:
+        return jsonify({'error' : 'Board not found'}), 404
+    
+    lists = board.lists
+    list_data = [{'id' : list.id, 'name' : list.name} for list in lists]
+
+    return jsonify(list_data), 200
