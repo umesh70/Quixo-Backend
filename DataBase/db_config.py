@@ -1,5 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
-from Admin.adminView import UserView, WorkspaceView, MemberView, TokenView, BoardView, GradientView, WorkspaceTokenView, ListView
+from Admin.adminView import UserView, WorkspaceView, MemberView, TokenView, BoardView, GradientView, WorkspaceTokenView, ListView, CardView
 from flask_admin import Admin
 from datetime import datetime
 from flask_migrate import Migrate
@@ -136,6 +136,20 @@ class Lists(db.Model):
     board_id = db.Column(db.Integer, db.ForeignKey('boards.id'), nullable = False)
     
     board = db.relationship('Board', back_populates = 'lists')
+    
+    cards = db.relationship('Cards', back_populates = 'list', cascade = "all, delete-orphan")
+
+
+class Cards(db.Model):
+    __tablename__ = "cards"
+
+    id = db.Column(db.Integer, primary_key = True)
+    title = db.Column(db.String(100), nullable = False)
+    list_id = db.Column(db.Integer, db.ForeignKey('lists.id'), nullable = False)
+
+    list = db.relationship('Lists', back_populates = 'cards')
+    
+    
 
 
 def init_db(app):
@@ -153,6 +167,6 @@ def init_db(app):
     admin.add_view(GradientView(BoardGradients, db.session))
     admin.add_view(WorkspaceTokenView(WorkspaceToken,db.session))
     admin.add_view(ListView(Lists, db.session))
-
+    admin.add_view(CardView(Cards, db.session))
     with app.app_context():
         db.create_all()

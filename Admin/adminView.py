@@ -25,3 +25,6 @@ class WorkspaceTokenView(ModelView):
 
 class ListView(ModelView):
     column_list = ('id', 'name', 'board_id')
+
+class CardView(ModelView):
+    column_list = ('id', 'title', 'list_id')

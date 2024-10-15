@@ -3,7 +3,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from flask import Blueprint, request, jsonify
-from DataBase.db_config import db, Board, Workspace, BoardGradients, Lists
+from DataBase.db_config import db, Board, Workspace, BoardGradients, Lists, Cards
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 board_app = Blueprint('boards', __name__)
@@ -98,8 +98,8 @@ def edit_board_details(board_id):
     if not board:
         return jsonify({'error' : 'Board not found'}), 404
 
-    if not name or not description:
-        return jsonify({'error' : 'Name and description are required'}), 400
+    if not name:
+        return jsonify({'error' : 'Name is required'}), 400
     
     board.name = name
     board.description = description
@@ -154,6 +154,47 @@ def get_lists(id):
         return jsonify({'error' : 'Board not found'}), 404
     
     lists = board.lists
-    list_data = [{'id' : list.id, 'name' : list.name} for list in lists]
+    list_data = []
+
+    for list in lists:
+        cards = list.cards
+        card_data = [{'id' : card.id, 'title' : card.title} for card in cards]
+        list_data.append({'id' : list.id, 'name' : list.name, 'cards' : card_data})
 
     return jsonify(list_data), 200
+
+@board_app.route('/add_card/<int:id>', methods = ['POST'])
+@jwt_required()
+def add_card(id):
+
+    data = request.json
+    title = data['title']
+
+    list = Lists.query.filter_by(id = id).first()
+
+    if not list:
+        return jsonify({'error' : 'List not found'}), 404
+    
+    if not title:
+        return jsonify({'error' : 'Title is required'}), 400
+    
+    new_card = Cards(title = title, list_id = id, list = list)
+    db.session.add(new_card)
+    db.session.commit()
+    return jsonify({'message' : 'Card added successfully', 'card_id' : new_card.id, 'card_title' : new_card.title}), 201
+
+#not being used currently
+@board_app.route('/get_cards/<int:id>', methods = ['GET'])
+@jwt_required()
+def get_cards(id):
+
+    list = Lists.query.filter_by(id = id).first()
+
+    if not list:
+        return jsonify({'error' : 'List not found'}), 404
+
+    cards = list.cards or []
+
+    card_data = [{'id' : card.id, 'title' : card.title} for card in cards]
+
+    return jsonify(card_data), 200
