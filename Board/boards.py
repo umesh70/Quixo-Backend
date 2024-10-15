@@ -198,3 +198,31 @@ def get_cards(id):
     card_data = [{'id' : card.id, 'title' : card.title} for card in cards]
 
     return jsonify(card_data), 200
+
+@board_app.route('/change_gradient/<int:id>', methods = ['PATCH'])
+@jwt_required()
+def change_gradient(id):
+
+    data = request.json
+    gradient_value = data['gradient']
+
+    board = Board.query.filter_by(id = id).first()
+
+    if not board:
+        return jsonify({'error' : 'Board not found'}), 404
+    
+    if not gradient_value:
+        return jsonify({'error' : 'Gradient is required'}), 400
+    
+    gradient = BoardGradients.query.filter_by(gradient = gradient_value).first()
+
+    if not gradient:
+        return jsonify({'error' : 'Gradient not found'}), 404
+    
+    board.gradient = gradient
+    db.session.commit()
+
+    return jsonify({'message' : 'Gradient changed successfully'}), 200
+
+    
+    
