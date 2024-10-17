@@ -225,4 +225,18 @@ def change_gradient(id):
     return jsonify({'message' : 'Gradient changed successfully'}), 200
 
     
+@board_app.route('/delete_list/<int:id>', methods = ['DELETE'])
+@jwt_required()
+def delete_list(id):
+
+    list = Lists.query.filter_by(id = id).first()
+
+    if not list:
+        return jsonify({'error' : 'List not found'}), 404
+    
+    db.session.delete(list)
+    db.session.commit()
+
+    return jsonify({'message' : 'List deleted successfully'}), 200
+
     
