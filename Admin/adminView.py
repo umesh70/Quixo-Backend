@@ -27,4 +27,4 @@ class ListView(ModelView):
     column_list = ('id', 'name', 'board_id')
 
 class CardView(ModelView):
-    column_list = ('id', 'title', 'list_id')
+    column_list = ('id', 'title', 'description', 'list_id')

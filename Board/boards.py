@@ -154,12 +154,7 @@ def get_lists(id):
         return jsonify({'error' : 'Board not found'}), 404
     
     lists = board.lists
-    list_data = []
-
-    for list in lists:
-        cards = list.cards
-        card_data = [{'id' : card.id, 'title' : card.title} for card in cards]
-        list_data.append({'id' : list.id, 'name' : list.name, 'cards' : card_data})
+    list_data = [{'id':list.id, 'name':list.name} for list in lists]
 
     return jsonify(list_data), 200
 
@@ -183,7 +178,6 @@ def add_card(id):
     db.session.commit()
     return jsonify({'message' : 'Card added successfully', 'card_id' : new_card.id, 'card_title' : new_card.title}), 201
 
-#not being used currently
 @board_app.route('/get_cards/<int:id>', methods = ['GET'])
 @jwt_required()
 def get_cards(id):
@@ -195,7 +189,7 @@ def get_cards(id):
 
     cards = list.cards or []
 
-    card_data = [{'id' : card.id, 'title' : card.title} for card in cards]
+    card_data = [{'id' : card.id, 'title' : card.title, 'description' : card.description, 'list_id' : card.list_id} for card in cards]
 
     return jsonify(card_data), 200
 
@@ -238,5 +232,41 @@ def delete_list(id):
     db.session.commit()
 
     return jsonify({'message' : 'List deleted successfully'}), 200
-
     
+@board_app.route('/edit_card_title/<int:id>', methods = ['PATCH'])
+@jwt_required()
+def edit_card_title(id):
+
+    data = request.json
+    title = data['title']
+
+    card = Cards.query.filter_by(id = id).first()
+
+    if not card:
+        return jsonify({'error' : 'Card not found'}), 404
+    
+    if not title:
+        return jsonify({'error' : 'Title is required'}), 400
+    
+    card.title = title
+    db.session.commit()
+
+    return jsonify({'message' : 'Card title updated successfully'}), 200
+
+@board_app.route('/edit_card_description/<int:id>', methods = ['POST'])
+@jwt_required()
+def edit_card_description(id):
+
+    data = request.json
+    description = data['description']
+
+    card = Cards.query.filter_by(id = id).first()
+
+    if not card:
+        return jsonify({'error' : 'Card not found'}), 404
+    
+    card.description = description
+    db.session.commit()
+
+    return jsonify({'message' : 'Card description updated successfully'}), 200
+
