@@ -1,5 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
-from Admin.adminView import UserView, WorkspaceView, MemberView, TokenView, BoardView, GradientView, WorkspaceTokenView, ListView, CardView
+from Admin.adminView import UserView, WorkspaceView, MemberView, TokenView, BoardView, GradientView, WorkspaceTokenView, ListView, CardView, ChecklistView, ChecklistItemsView
 from flask_admin import Admin
 from datetime import datetime
 from flask_migrate import Migrate
@@ -149,8 +149,28 @@ class Cards(db.Model):
     list_id = db.Column(db.Integer, db.ForeignKey('lists.id'), nullable = False)
 
     list = db.relationship('Lists', back_populates = 'cards')
+    checklist = db.relationship('Checklists', back_populates='card', uselist=False, cascade="all, delete-orphan")
+
+
+class Checklists(db.Model):
+    __tablename__ = "checklists"
+
+    id = db.Column(db.Integer, primary_key=True)
+    card_id = db.Column(db.Integer, db.ForeignKey('cards.id'), nullable=False, unique=True)
     
+    card = db.relationship('Cards', back_populates='checklist')
+    items = db.relationship('ChecklistItems', back_populates='checklist', cascade="all, delete-orphan")
+
+
+class ChecklistItems(db.Model):
+    __tablename__ = "checklist_items"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    completed = db.Column(db.Boolean, default=False)
+    checklist_id = db.Column(db.Integer, db.ForeignKey('checklists.id'), nullable=False)
     
+    checklist = db.relationship('Checklists', back_populates='items')
 
 
 def init_db(app):
@@ -169,5 +189,9 @@ def init_db(app):
     admin.add_view(WorkspaceTokenView(WorkspaceToken,db.session))
     admin.add_view(ListView(Lists, db.session))
     admin.add_view(CardView(Cards, db.session))
+    admin.add_view(ChecklistView(Checklists, db.session))
+    admin.add_view(ChecklistItemsView(ChecklistItems, db.session))
+
+
     with app.app_context():
         db.create_all()

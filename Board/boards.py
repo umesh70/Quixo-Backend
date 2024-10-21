@@ -270,3 +270,16 @@ def edit_card_description(id):
 
     return jsonify({'message' : 'Card description updated successfully'}), 200
 
+@board_app.route('/delete_card/<int:id>', methods = ['DELETE'])
+@jwt_required()
+def delete_card(id):
+
+    card = Cards.query.filter_by(id = id).first()
+
+    if not card:
+        return jsonify({'error' : 'Card not found'}), 404
+    
+    db.session.delete(card)
+    db.session.commit()
+
+    return jsonify({'message' : 'Card deleted successfully'}), 200

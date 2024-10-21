@@ -28,3 +28,9 @@ class ListView(ModelView):
 
 class CardView(ModelView):
     column_list = ('id', 'title', 'description', 'list_id')
+
+class ChecklistView(ModelView):
+    column_list = ('id', 'card_id')
+
+class ChecklistItemsView(ModelView):
+    column_list = ('id', 'name', 'completed', 'checklist_id')
