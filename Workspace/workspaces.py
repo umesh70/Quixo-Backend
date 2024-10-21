@@ -50,7 +50,7 @@ def create_workspace():
     
     db.session.add(workmember)
     db.session.commit()
-    return jsonify({'message': f'Workspace {workspace_name} created successfully'}), 201
+    return jsonify({'message': f'Workspace {workspace_name} created successfully', "id":new_workspace.workspace_id}), 201
 
 
 @Workspace_app.route('/get_user_workspaces', methods=['GET'])
@@ -130,6 +130,19 @@ def edit_workspace_details(id):
 Endpoint for sending an invite via email(Send invite link to their email)
 """
 
+"""
+For verify mode -- 
+1. Workspace does not exist
+2. Somebody other than admin is inviting
+3. No email is provided
+4. Admin inviting
+    1.  themselves
+    2.  already existing members of that workspace
+    3.  a member that exists in quixo but not in workspace
+    4.  any body other than this
+
+"""
+
 @Workspace_app.route('/add_member/<workspace_id>',methods = ['POST'])
 @jwt_required()
 def add_member(workspace_id):
@@ -143,12 +156,14 @@ def add_member(workspace_id):
     # Check if the current user is the admin
     if workspace.admin_id != current_user_id:
         return jsonify({"error": "Only admins have permission to invite members to a workspace"}), 403
-    
+
     data = request.json
     email = data.get('email')
+    mode = data.get('mode')
 
     if not email:
         return jsonify({"error": "Email is required"}), 400
+    
     if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
         return jsonify({"error": "Invalid email format"}), 400
  
@@ -157,16 +172,27 @@ def add_member(workspace_id):
     # Check if the user is already a member of the workspace
     existing_member = WorkspaceMember.query.filter_by(workspace_id=workspace_id, email=email).first()
     if existing_member:
+        if mode == 'verify':
+            if existing_member.user_id == current_user_id:
+                return jsonify({"status": "You are already a member of this workspace", "disable" : True}), 200
+
+            return jsonify({"status": "User is already a member of this workspace", "disable" : True}), 200
+        
         return jsonify({"error": "User is already a member of this workspace"}), 400
 
     #Check whether a link to the asked workspace, email was sent earlier too
     if WorkspaceToken.query.filter_by(email = email, workspace_id = workspace_id).first():
+        if mode == 'verify':
+            return jsonify({"status": "Invitation link was sent already" , "disable" : True}), 200
         return jsonify({"error": f"Invitation link was already sent for {workspace_name} workspace to {email} email"}), 400
     
     # Generate a unique invitation token
     invitation_token = generate_token(email + workspace_id)
 
     if user:
+        if mode == "verify":
+                return jsonify({"status":"User exists in Quixo, click on 'invite to workspace' to send invite"}), 200
+        
         if active_session(user.email):
             workmember = WorkspaceMember(
                 workspace_id = workspace_id,
@@ -188,6 +214,8 @@ def add_member(workspace_id):
             db.session.add(inivite_info)
         
     else:
+            if mode == "verify":
+                return jsonify({"status":"Unverified account (you can still send the invitation)"}), 200
             invite_link = f"{base_url}/signup?token={invitation_token}&email={email}&workspace_id={workspace_id}"
             inivite_info = WorkspaceToken(
                 token=invitation_token,
@@ -242,20 +270,6 @@ def get_members(workspace_id):
     
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
-
-
-"""
-CASES
-
-1. the user who wants to leave the workspade is a normal user
-2. the admin wants to leave the workspace
-    2.1 check if there are any other admin
-        2.1.1 if yes remove the admin 
-        2.1.2 if not check if there are other members in the workspace except the admin who is trying to leave 
-        2.1.3 if not delete the workspace 
-        2.1.4 if yes, assign anyother person randomly the admin
-"""
 
 
 @Workspace_app.route('/leave_workspace/<workspace_id>', methods=['POST'])
