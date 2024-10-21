@@ -77,7 +77,8 @@ def get_user_workspaces():
             'workspace_id': workspace.workspace_id,
             'workspace_name': workspace.workspace_name,
             'description': workspace.description,
-            'admin_mail': workspace.admin_mail
+            'admin_mail': workspace.admin_mail,
+            'workspace_color' : workspace.admin.user_color
         }
     
     # Convert query results to list of dictionaries
