@@ -283,3 +283,28 @@ def delete_card(id):
     db.session.commit()
 
     return jsonify({'message' : 'Card deleted successfully'}), 200
+
+@board_app.route('/move_card/<int:id>', methods = ['PATCH'])
+@jwt_required()
+def move_card(id):
+
+    card = Cards.query.filter_by(id = id).first()
+
+    if not card:
+        return jsonify({'error' : "Card not found"}), 404
+    
+    source_list_id = card.list_id
+
+    data = request.json
+    target_list_id = data['target_list_id']
+
+    target_list = Lists.query.filter_by(id = target_list_id)
+
+    if not target_list:
+        return jsonify({'error' : "Target list not found"}), 404
+    
+    card.list_id = target_list_id
+    db.session.commit()
+
+    return jsonify({'message':"Card moved succesfully", "source_id":source_list_id, "target_id" : target_list_id}), 200
+    
