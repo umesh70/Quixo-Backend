@@ -3,7 +3,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from flask import Blueprint, request, jsonify
-from DataBase.db_config import db, Board, Workspace, BoardGradients, Lists, Cards
+from DataBase.db_config import db, Board, Workspace, BoardGradients, Lists, Cards, Checklists, ChecklistItems
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 board_app = Blueprint('boards', __name__)
@@ -308,3 +308,102 @@ def move_card(id):
 
     return jsonify({'message':"Card moved succesfully", "source_id":source_list_id, "target_id" : target_list_id}), 200
     
+@board_app.route('/save_checklist/<int:id>', methods=['POST'])
+@jwt_required()
+def save_checklist(id):
+    # Find the card by ID
+    card = Cards.query.get(id)
+
+    if not card:
+        return jsonify({"error": "Card not found"}), 404
+
+    # Get the checklist items from the request
+    data = request.json
+    checklist_items = data.get('checklist_items', [])
+
+    # Check if the card already has a checklist
+    checklist = Checklists.query.filter_by(card_id=id).first()
+
+    if not checklist:
+        # If no checklist exists for the card, create a new one
+        checklist = Checklists(card_id=id)
+        db.session.add(checklist)
+        db.session.commit()
+
+    # Get existing checklist items from the database
+    existing_items = {item.id: item for item in checklist.items}
+
+    # Prepare a set of item IDs received in the request
+    incoming_item_ids = set()
+
+    # Update or create checklist items
+    for item_data in checklist_items:
+        item_id = item_data.get('id')
+        item_name = item_data.get('text', '').strip()  # Ensure we remove leading/trailing spaces
+        item_completed = item_data.get('completed', False)
+
+        if not item_name:
+            # If the name is empty, skip creating a new item and delete existing ones
+            if item_id and item_id in existing_items:
+                db.session.delete(existing_items[item_id])
+            continue
+
+        if item_id and item_id in existing_items:
+            # If the item exists, update it
+            item = existing_items[item_id]
+            item.name = item_name
+            item.completed = item_completed
+        else:
+            # Only create new items if they have a non-empty name
+            new_item = ChecklistItems(
+                name=item_name,
+                completed=item_completed,
+                checklist_id=checklist.id
+            )
+            db.session.add(new_item)
+
+        # Track the item IDs that are kept or updated
+        if item_id:
+            incoming_item_ids.add(item_id)
+
+    # Remove items that are in the existing list but not in the incoming data
+    for existing_item_id, existing_item in existing_items.items():
+        if existing_item_id not in incoming_item_ids:
+            db.session.delete(existing_item)
+
+    # Commit the changes to the database
+    db.session.commit()
+
+    return jsonify({"message": "Checklist saved successfully"}), 200
+
+
+@board_app.route('/get_checklist/<int:id>', methods=['GET'])
+@jwt_required()
+def get_checklist(id):
+    # Find the card by ID
+    card = Cards.query.get(id)
+
+    if not card:
+        return jsonify({"error": "Card not found"}), 404
+
+    # Get the checklist for the card
+    checklist = Checklists.query.filter_by(card_id=id).first()
+
+    if not checklist:
+        return jsonify({"error": "Checklist not found"}), 404
+
+    # Retrieve the checklist items
+    checklist_items = [{
+        "id": item.id,
+        "text": item.name,
+        "completed": item.completed
+    } for item in checklist.items]
+
+    return jsonify({
+        "checklist_id": checklist.id,
+        "card_id": card.id,
+        "checklist_items": checklist_items
+    }), 200
+
+
+
