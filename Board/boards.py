@@ -181,17 +181,33 @@ def add_card(id):
 @board_app.route('/get_cards/<int:id>', methods = ['GET'])
 @jwt_required()
 def get_cards(id):
-
-    list = Lists.query.filter_by(id = id).first()
+    list = Lists.query.filter_by(id=id).first()
 
     if not list:
-        return jsonify({'error' : 'List not found'}), 404
+        return jsonify({'error': 'List not found'}), 404
 
     cards = list.cards or []
 
-    card_data = [{'id' : card.id, 'title' : card.title, 'description' : card.description, 'list_id' : card.list_id} for card in cards]
+    card_data = []
+    for card in cards:
+        # Retrieve the checklist associated with this card
+        checklist = card.checklist
+
+        # Calculate total and completed checklist items
+        total_checklist_items = len(checklist.items) if checklist else 0
+        completed_items = sum(item.completed for item in checklist.items) if checklist else 0
+
+        card_data.append({
+            'id': card.id,
+            'title': card.title,
+            'description': card.description,
+            'list_id': card.list_id,
+            'total_checklist_items': total_checklist_items,
+            'completed_items': completed_items
+        })
 
     return jsonify(card_data), 200
+
 
 @board_app.route('/change_gradient/<int:id>', methods = ['PATCH'])
 @jwt_required()
